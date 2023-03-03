@@ -1,22 +1,42 @@
 <template>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="#">我的博客</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#MyBlogNavbar"
-                aria-controls="MyBlogNavbar" aria-expanded="false" aria-label="Toggle navigation">
+            <router-link class="navbar-brand" :to="{ name: 'home' }">导航</router-link>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#myBlogNavbar"
+                aria-controls="myBlogNavbar" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="MyBlogNavbar">
+            
+            <div class="collapse navbar-collapse" id="myBlogNavbar">
+
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <router-link class="nav-link" active-class="active" aria-current="page"
+                            :to="{ name: 'news_index' }">新鲜事</router-link>
+                    </li>
+                    <li class="nav-item">
+                        <router-link class="nav-link" active-class="active" aria-current="page"
+                            :to="{ name: 'chatroom_index' }">聊天室</router-link>
+                    </li>
+                    <li class="nav-item">
+                        <router-link class="nav-link" active-class="active" aria-current="page"
+                            :to="{ name: 'coding_index' }">写写代码吧！</router-link>
+                    </li>
+                </ul>
+
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="#">新鲜事</a>
+                        <router-link class="nav-link" active-class="active" aria-current="page"
+                            :to="{ name: 'login_index' }">登录</router-link>
                     </li>
+
                     <li class="nav-item">
-                        <a class="nav-link" href="#">聊天室</a>
+                        <router-link class="nav-link" active-class="active" aria-current="page"
+                            :to="{ name: 'register_index' }">注册</router-link>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">写写代码吧！</a>
-                    </li>
+                </ul>
+
+                <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                             aria-expanded="false">
@@ -24,11 +44,10 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="#">Action</a></li>
-                            <li><a class="dropdown-item" href="#">Another action</a></li>
-                            <li><a class="dropdown-item" href="#">Something else here</a></li>
                         </ul>
                     </li>
                 </ul>
+
             </div>
         </div>
     </nav>
