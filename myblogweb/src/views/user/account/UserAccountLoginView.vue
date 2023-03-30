@@ -2,18 +2,17 @@
     <ContentField class="col-8">
         <div class="row justify-content-md-center">
             <div class="col-3">
-                <form  @submit.prevent="login">
+                <form @submit.prevent="login">
                     <div class="mb-3">
-                        <label for="username" class="form-label">用户名：</label>
+                        <label for="username" class="form-label">用户名</label>
                         <input type="text" class="form-control" id="username" placeholder="请输入用户名">
                     </div>
                     <div class="mb-3">
-                        <label for="password" class="form-label">密码：</label>
+                        <label for="password" class="form-label">密码</label>
                         <input type="password" class="form-control" id="password" placeholder="请输入密码">
                     </div>
-                    <div v-if="error" class="error">{{ error }}</div>
-                    <div v-else> <br /> </div>
-                    <button type="submit" class="btn btn-success">登录</button>
+                    <div class="error-message">{{ error_message }}</div>
+                    <button type="submit" class="btn btn-primary">登录</button>
                 </form>
             </div>
         </div>
@@ -25,6 +24,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import ContentField from '@/components/ContentField.vue'
+import store from '@/store';
 
 
 export default {
@@ -33,37 +33,35 @@ export default {
     },
     setup() {
         const router = useRouter();
-        const username = ref('');
-        const password = ref('');
-        const error = ref(null);
+        let username = ref("");
+        let password = ref("");
+        let error_message = ref("");
 
-        const login = async () => {
-            
-            try {
-                // 通过 API 进行登录验证
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    body: JSON.stringify({ username: username.value, password: password.value }),
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    // 登录成功，跳转到主页
-                    router.push('/');
-                } else {
-                    // 登录失败，显示错误信息
-                    error.value = data.message;
+        //jwt授权验证
+        // const jwt_token = localStorage.getItem("jwt_token");
+
+        const login = () => {
+            error_message = "";
+            store.dispatch("login", {
+                username: username.value,
+                password: password.value,
+                success() {
+                    store.dispatch("getInfo", {
+                        success() {
+                            router.push({ name: "home" });
+                        }
+                    })
+                },
+                error() {
+                    error_message.value = "用户名或密码错误";
                 }
-            } catch (err) {
-                console.error(err);
-                error.value = '登录失败，请稍后重试。';
-            }
-        };
+            })
+        }
 
         return {
             username,
             password,
-            error,
+            error_message,
             login
         };
     }
@@ -76,7 +74,7 @@ export default {
     margin-right: auto;
 }
 
-.error {
+div.error-message {
     margin-top: 1rem;
     color: red;
     font-weight: bold;
