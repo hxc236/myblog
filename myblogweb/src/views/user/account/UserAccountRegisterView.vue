@@ -26,23 +26,39 @@
 
 <script>
 import ContentField from '@/components/ContentField.vue'
-// import { useStore } from 'vuex';
+import { useStore } from 'vuex';
 import { ref } from 'vue';
-// import { useStore } from 'vuex';
+import $ from 'jquery'
+import router from '@/router';
 
 export default {
     components: {
         ContentField,
     },
     setup() {
-        // const store = useStore();
+        const store = useStore();
         let username = ref("");
         let password = ref("");
         let confirmedPassword = ref("");
         let error_message = ref("");
-        // store.commit();
+        store.commit("updatePullingInfo", false);
         const register = () => {
-            
+            $.ajax({
+                url: "http://127.0.0.1:1816/user/account/register/",
+                type: "post",
+                data: {
+                    username: username.value,
+                    password: password.value,
+                    confirmedPassword: confirmedPassword.value
+                },
+                success(resp) {
+                    if (resp.error_message === "success") {
+                        router.push({ name: "login_index" });
+                    } else {
+                        error_message.value = resp.error_message;
+                    }
+                }
+            })
         }
 
         return {
@@ -56,4 +72,9 @@ export default {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+div.error-message {
+    margin-top: 1rem;
+    color: red;
+}
+</style>

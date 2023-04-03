@@ -6,7 +6,7 @@
                 aria-controls="myBlogNavbar" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            
+
             <div class="collapse navbar-collapse" id="myBlogNavbar">
 
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
@@ -24,7 +24,29 @@
                     </li>
                 </ul>
 
-                <ul class="navbar-nav">
+                <ul class="navbar-nav" v-if="$store.state.user.is_login">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            {{ $store.state.user.username }} 
+                            <!-- <img src="$store.state.user.photo" class="full " alt=""> -->
+                            
+                            <!-- <img :src="$store.state.user.photo" alt="" class="rounded-circle full">    -->
+                        </a>
+                            
+                        <ul class="dropdown-menu">
+                            <li>
+                                <router-link class="dropdown-item" :to="{ name: '404' }">我的信息</router-link>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="#" @click="logout">退出</a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav" v-else-if="!$store.state.user.is_login">
                     <li class="nav-item">
                         <router-link class="nav-link" active-class="active" aria-current="page"
                             :to="{ name: 'login_index' }">登录</router-link>
@@ -36,17 +58,7 @@
                     </li>
                 </ul>
 
-                <ul class="navbar-nav">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                            我的
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Action</a></li>
-                        </ul>
-                    </li>
-                </ul>
+
 
             </div>
         </div>
@@ -54,7 +66,30 @@
 </template>
   
 <script>
+import { useStore } from 'vuex';
+
+export default {
+    setup() {
+        const store = useStore();
+        const logout = () => {
+            store.dispatch("logout");
+        }
+
+        return {
+            logout,
+        }
+    }
+}
 
 </script>
   
-<style scoped></style>
+<style scoped>
+imgs.full {
+    width: 5%;
+
+}
+
+div.top_dist {
+    margin-top: 20px;
+}
+</style>
