@@ -14,6 +14,7 @@ public class LoginController {
     @Autowired
     private LoginService loginService;
 
+    // login : web -> backend
     @PostMapping("/user/account/token/")
     Map<String, String> login(@RequestParam Map<String, String> data) {
         String username = data.get("username");

@@ -30,7 +30,6 @@
                             aria-expanded="false">
                             {{ $store.state.user.username }} 
                             <!-- <img src="$store.state.user.photo" class="full " alt=""> -->
-                            
                             <!-- <img :src="$store.state.user.photo" alt="" class="rounded-circle full">    -->
                         </a>
                             
