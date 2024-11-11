@@ -1,7 +1,7 @@
 <template>
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container">
-            <router-link class="navbar-brand" :to="{ name: 'home' }">导航</router-link>
+            <router-link class="navbar-brand" :to="{ name: 'home' }">主页</router-link>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#myBlogNavbar"
                 aria-controls="myBlogNavbar" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -20,7 +20,7 @@
                     </li>
                     <li class="nav-item">
                         <router-link class="nav-link" active-class="active" aria-current="page"
-                            :to="{ name: 'coding_index' }">写写代码吧！</router-link>
+                            :to="{ name: 'coding_index' }">代码</router-link>
                     </li>
                 </ul>
 

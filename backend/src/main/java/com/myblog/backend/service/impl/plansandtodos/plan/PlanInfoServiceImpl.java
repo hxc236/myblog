@@ -1,8 +1,14 @@
 package com.myblog.backend.service.impl.plansandtodos.plan;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.myblog.backend.mapper.PlanMapper;
+import com.myblog.backend.pojo.User;
 import com.myblog.backend.service.plansandtodos.plan.PlanInfoService;
+import com.myblog.backend.utils.UserDetailsImpl;
+import com.myblog.backend.utils.UserUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -32,7 +38,14 @@ public class PlanInfoServiceImpl implements PlanInfoService {
 
 
          */
+        User user = UserUtil.getUser();
         Map<String, Object> result = new HashMap<>();
+
+
+
+
+        result.put("error_message", "success");
+
 
         return result;
     }
