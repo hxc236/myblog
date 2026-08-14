@@ -9,6 +9,14 @@
 
 ## 1. 本地发布检查（上线前必须全部通过）
 
+**一键执行**（重启电脑并启动 Docker Desktop 后）：
+
+```bash
+bash scripts/release-check.sh
+```
+
+脚本依次完成下面的 1–4 项并汇总结果。分步命令如下：
+
 ```bash
 # 后端：测试 + 打包（Java 11，默认制品即公开站点应用）
 cd backend
