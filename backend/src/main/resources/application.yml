@@ -5,3 +5,7 @@ spring:
 
 server:
   port: ${PORT:1816}
+
+# 公开站点应用（PublicSiteApplication）的跨域来源；生产仅由环境变量提供。
+site:
+  origin: ${SITE_ORIGIN:}

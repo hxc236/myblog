@@ -1,3 +1,8 @@
+# 旧应用（com.myblog.backend.BackendApplication）的历史数据库配置。
+#
+# 重要：本文件已被移出活动配置（后缀 .hide），其中的数据库密码曾提交到 Git 历史。
+# 轮换责任：上线前必须重置 myblog 数据库的 root 密码（或改用最小权限账号），
+# 并确认旧应用不再使用该凭据。详见 docs/deploy.md「秘密轮换」。
 server.port=1816
 
 spring.datasource.username=root

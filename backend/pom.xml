@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.9</version>
+        <version>2.7.18</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.myblog</groupId>
@@ -14,7 +14,8 @@
     <name>backend</name>
     <description>backend</description>
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>11</java.version>
+        <!-- 所有 Spring starter 版本由 Boot 父项目管理，禁止显式覆盖 Spring 3 starter 版本 -->
     </properties>
     <dependencies>
 
@@ -30,7 +31,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
-            <version>3.0.4</version>
         </dependency>
 
 
@@ -70,7 +70,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
-            <version>3.0.4</version>
         </dependency>
 
         <!-- Java JWT (JSON Web Token) 库的组成部分 jjwt-api、jjwt-impl、jjwt-jackson -->
@@ -124,6 +123,26 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <!-- 默认制品：隔离公开站点应用（生产可执行入口） -->
+                    <execution>
+                        <id>repackage</id>
+                        <configuration>
+                            <mainClass>com.myblog.publicsite.PublicSiteApplication</mainClass>
+                        </configuration>
+                    </execution>
+                    <!-- 旧应用单独保留为 legacy 分类制品，不参与生产运行 -->
+                    <execution>
+                        <id>repackage-legacy</id>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>legacy</classifier>
+                            <mainClass>com.myblog.backend.BackendApplication</mainClass>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

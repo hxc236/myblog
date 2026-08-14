@@ -1,0 +1,11 @@
+[
+  {
+    "slug": "mvp-launch-notes",
+    "title": "一天上线个人主页 MVP：架构与取舍",
+    "summary": "记录个人主页 MVP 的关键架构决策：无数据库的 Spring Boot API、Vue 静态站、冷启动恢复与隐私边界。",
+    "publishedAt": "2026-08-14",
+    "readingMinutes": 5,
+    "featured": true,
+    "bodyResource": "posts/mvp-launch-notes.md"
+  }
+]
