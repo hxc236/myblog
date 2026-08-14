@@ -75,10 +75,10 @@ class SiteApiDatabaseTest {
                 .isEqualTo(5);
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM skill_group_items", Integer.class))
                 .isEqualTo(20);
-        // 四个迁移（#15 结构 + 初始值、#16 admin 会话表、#17 站点设置）都成功执行
+        // 五个迁移（#15/#16/#17/#18）都成功执行
         assertThat(jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM flyway_schema_history WHERE success", Integer.class))
-                .isEqualTo(4);
+                .isEqualTo(5);
     }
 
     @Test

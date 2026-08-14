@@ -1,5 +1,5 @@
 /**
- * Admin Console API 客户端（#16/#17）。
+ * Admin Console API 客户端（#16/#17/#18）。
  *
  * - 会话令牌只保存在 sessionStorage（#14 实现决策）：关闭浏览器后需要重新登录；
  * - 所有管理请求携带 `Authorization: Bearer <token>`，令牌不进入 URL；
@@ -101,4 +101,48 @@ export async function publishSiteSettings(settings) {
     return { ok: true, payload }
   }
   return { ok: false, message: (payload && payload.message) || `保存失败（HTTP ${status}）` }
+}
+
+/** 全部 Project（#18 管理端）；401 时返回 null。 */
+export async function fetchProjects() {
+  const { status, payload } = await adminFetch('/api/admin/projects')
+  if (status !== 200 || !payload) {
+    return null
+  }
+  return payload
+}
+
+/** 新增 Project（#18）。 */
+export async function createProject(project) {
+  const { status, payload } = await adminFetch('/api/admin/projects', {
+    method: 'POST',
+    body: project,
+  })
+  if (status === 201) {
+    return { ok: true, payload }
+  }
+  return { ok: false, message: (payload && payload.message) || `创建失败（HTTP ${status}）` }
+}
+
+/** 保存并发布单个 Project（#18，无 Draft/修订历史）。 */
+export async function updateProject(id, project) {
+  const { status, payload } = await adminFetch(`/api/admin/projects/${id}`, {
+    method: 'PUT',
+    body: project,
+  })
+  if (status === 200) {
+    return { ok: true, payload }
+  }
+  return { ok: false, message: (payload && payload.message) || `保存失败（HTTP ${status}）` }
+}
+
+/** 删除 Project（#18）。 */
+export async function deleteProject(id) {
+  const { status, payload } = await adminFetch(`/api/admin/projects/${id}`, {
+    method: 'DELETE',
+  })
+  if (status === 204) {
+    return { ok: true, payload: null }
+  }
+  return { ok: false, message: (payload && payload.message) || `删除失败（HTTP ${status}）` }
 }
