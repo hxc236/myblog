@@ -123,6 +123,11 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <!-- 插件级 mainClass：mvn spring-boot:run 无需 -D 参数即可启动公开站点应用，
+                     同时兼容 PowerShell 7.3+ 对含 = 的原生命令参数拆分问题 -->
+                <configuration>
+                    <mainClass>com.myblog.publicsite.PublicSiteApplication</mainClass>
+                </configuration>
                 <executions>
                     <!-- 默认制品：隔离公开站点应用（生产可执行入口） -->
                     <execution>
