@@ -250,14 +250,27 @@ class TaxonomyApiTest {
                                             Long draftRevisionId, Long publishedRevisionId,
                                             Long tagId) {
         Long postId = jdbcTemplate.queryForObject(
-                "INSERT INTO posts (slug, category_id, draft_revision_id, published_revision_id)"
-                        + " VALUES (?, ?, ?, ?) RETURNING id",
-                Long.class, slug, categoryId, draftRevisionId, publishedRevisionId);
+                "INSERT INTO posts (slug, category_id) VALUES (?, ?) RETURNING id",
+                Long.class, slug, categoryId);
+        // 修订指针必须是真实存在的 post_revisions 行（#20 起有外键约束）
+        Long resolvedDraft = draftRevisionId == null ? null : revisionRow(postId, 1, slug + "-draft");
+        Long resolvedPublished = publishedRevisionId == null
+                ? null : revisionRow(postId, 2, slug + "-pub");
+        jdbcTemplate.update(
+                "UPDATE posts SET draft_revision_id = ?, published_revision_id = ? WHERE id = ?",
+                resolvedDraft, resolvedPublished, postId);
         if (tagId != null) {
             jdbcTemplate.update(
                     "INSERT INTO post_tags (post_id, tag_id) VALUES (?, ?)", postId, tagId);
         }
         return postId;
+    }
+
+    private long revisionRow(long postId, int revisionNo, String title) {
+        return jdbcTemplate.queryForObject(
+                "INSERT INTO post_revisions (post_id, revision_no, title, summary, body_markdown)"
+                        + " VALUES (?, ?, ?, '', '') RETURNING id",
+                Long.class, postId, revisionNo, title);
     }
 
     private String adminToken() throws Exception {

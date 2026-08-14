@@ -188,3 +188,40 @@ export async function renameTag(id, name) {
 export async function deleteTag(id) {
   return taxonomyResult(await adminFetch(`/api/admin/tags/${id}`, { method: 'DELETE' }), 204, '删除标签')
 }
+
+/** Blog Post 管理（#20）。 */
+export async function fetchPosts() {
+  const { status, payload } = await adminFetch('/api/admin/posts')
+  return status === 200 ? payload : null
+}
+
+export async function createPost() {
+  const { status, payload } = await adminFetch('/api/admin/posts', { method: 'POST' })
+  return status === 201 ? payload : null
+}
+
+export async function fetchPost(id) {
+  const { status, payload } = await adminFetch(`/api/admin/posts/${id}`)
+  return status === 200 ? payload : null
+}
+
+export async function savePostDraft(id, draft) {
+  const { status, payload } = await adminFetch(`/api/admin/posts/${id}`, {
+    method: 'PUT',
+    body: draft,
+  })
+  if (status === 200) {
+    return { ok: true, payload }
+  }
+  return { ok: false, message: (payload && payload.message) || `保存失败（HTTP ${status}）` }
+}
+
+export async function publishPost(id) {
+  const { status, payload } = await adminFetch(`/api/admin/posts/${id}/publish`, {
+    method: 'POST',
+  })
+  if (status === 200) {
+    return { ok: true, payload }
+  }
+  return { ok: false, message: (payload && payload.message) || `发布失败（HTTP ${status}）` }
+}
