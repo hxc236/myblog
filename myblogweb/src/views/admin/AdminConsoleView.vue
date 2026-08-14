@@ -49,6 +49,13 @@
       >
         媒体库
       </button>
+      <button
+        class="admin-tab"
+        :class="{ active: activeTab === 'analytics' }"
+        @click="activeTab = 'analytics'"
+      >
+        统计
+      </button>
     </nav>
 
     <template v-if="activeTab === 'settings'">
@@ -180,8 +187,12 @@
       <AdminPostsEditor />
     </template>
 
-    <template v-else>
+    <template v-else-if="activeTab === 'media'">
       <AdminMediaEditor />
+    </template>
+
+    <template v-else>
+      <AdminAnalyticsView />
     </template>
   </div>
 </template>
@@ -193,6 +204,7 @@ import AdminProjectsEditor from '@/components/admin/AdminProjectsEditor.vue'
 import AdminTaxonomyEditor from '@/components/admin/AdminTaxonomyEditor.vue'
 import AdminPostsEditor from '@/components/admin/AdminPostsEditor.vue'
 import AdminMediaEditor from '@/components/admin/AdminMediaEditor.vue'
+import AdminAnalyticsView from '@/components/admin/AdminAnalyticsView.vue'
 import {
   clearAdminToken,
   fetchMe,
@@ -208,7 +220,7 @@ import {
  */
 export default {
   name: 'AdminConsoleView',
-  components: { AdminProjectsEditor, AdminTaxonomyEditor, AdminPostsEditor, AdminMediaEditor },
+  components: { AdminProjectsEditor, AdminTaxonomyEditor, AdminPostsEditor, AdminMediaEditor, AdminAnalyticsView },
   setup() {
     const router = useRouter()
     const me = ref(null)

@@ -296,3 +296,14 @@ export async function deleteMedia(id) {
   }
   return { ok: false, message: (payload && payload.message) || `删除失败（HTTP ${status}）` }
 }
+
+/** 内容分析（#25）。 */
+export async function fetchAnalytics() {
+  const { status, payload } = await adminFetch('/api/admin/analytics')
+  return status === 200 ? payload : null
+}
+
+export async function fetchPostTrend(postId, days) {
+  const { status, payload } = await adminFetch(`/api/admin/analytics/posts/${postId}?days=${days}`)
+  return status === 200 ? payload : null
+}

@@ -37,6 +37,7 @@ import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { loadJson } from '@/api'
 import { recordReading } from '@/composables/readingHistory'
+import { reportPageView } from '@/composables/pageView'
 import { usePhaseNotice } from '@/composables/usePhaseNotice'
 import MarkdownView from '@/components/MarkdownView.vue'
 import LoadStateNotice from '@/components/LoadStateNotice.vue'
@@ -55,6 +56,7 @@ export default {
       try {
         post.value = await loadJson(`/api/v1/posts/${route.params.slug}`, { onPhase })
         recordReading(route.params.slug, post.value.title)
+        reportPageView(route.params.slug)
         phase.value = 'ready'
       } catch (e) {
         // 后端对不存在/格式错误的 slug 返回 JSON 404 → 站内“文章不存在”
