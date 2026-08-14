@@ -19,12 +19,6 @@
       <router-link class="btn btn-primary" to="/blog">返回博客列表</router-link>
     </div>
 
-    <div v-else-if="phase === 'error'" class="not-found">
-      <h1 class="nf-title">内容暂时不可用</h1>
-      <p class="nf-text">内容服务暂时无法响应，请稍后重试。</p>
-      <button type="button" class="btn btn-primary" @click="loadPost">重新加载</button>
-    </div>
-
     <div v-else class="post-skeleton-wrap" aria-hidden="true">
       <div class="skeleton title-skeleton"></div>
       <div class="skeleton line"></div>
@@ -32,16 +26,17 @@
       <div class="skeleton line"></div>
     </div>
 
-    <LoadStateNotice :phase="phase === 'loading' || phase === 'starting' || phase === 'retrying' ? phase : 'ready'" @retry="loadPost" />
+    <LoadStateNotice :phase="phase" @retry="loadPost" />
 
     <router-link class="back-home" to="/blog">← 返回博客列表</router-link>
   </div>
 </template>
 
 <script>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { loadJson } from '@/api'
+import { usePhaseNotice } from '@/composables/usePhaseNotice'
 import MarkdownView from '@/components/MarkdownView.vue'
 import LoadStateNotice from '@/components/LoadStateNotice.vue'
 
@@ -52,30 +47,20 @@ export default {
     const route = useRoute()
     const post = ref(null)
     // loading | starting | retrying | ready | error | not-found
-    const phase = ref('loading')
-    let cancelled = false
+    const { phase, onPhase } = usePhaseNotice()
 
     async function loadPost() {
       phase.value = 'loading'
-      const onPhase = (p) => {
-        if (!cancelled && (p === 'starting' || p === 'retrying')) phase.value = p
-      }
       try {
-        const data = await loadJson(`/api/v1/posts/${route.params.slug}`, { onPhase })
-        if (cancelled) return
-        post.value = data
+        post.value = await loadJson(`/api/v1/posts/${route.params.slug}`, { onPhase })
         phase.value = 'ready'
       } catch (e) {
-        if (cancelled) return
         // 后端对不存在/格式错误的 slug 返回 JSON 404 → 站内“文章不存在”
         phase.value = e && e.status === 404 ? 'not-found' : 'error'
       }
     }
 
     onMounted(loadPost)
-    onBeforeUnmount(() => {
-      cancelled = true
-    })
 
     return { post, phase, loadPost }
   },

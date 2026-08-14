@@ -17,8 +17,9 @@
 </template>
 
 <script>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { loadJson } from '@/api'
+import { usePhaseNotice } from '@/composables/usePhaseNotice'
 import PostRow from '@/components/PostRow.vue'
 import LoadStateNotice from '@/components/LoadStateNotice.vue'
 
@@ -27,27 +28,19 @@ export default {
   components: { PostRow, LoadStateNotice },
   setup() {
     const posts = ref(null)
-    const phase = ref('loading')
-    let cancelled = false
+    const { phase, onPhase } = usePhaseNotice()
 
     async function loadPosts() {
       phase.value = 'loading'
       try {
-        posts.value = await loadJson('/api/v1/posts', {
-          onPhase: (p) => {
-            if (!cancelled && (p === 'starting' || p === 'retrying')) phase.value = p
-          },
-        })
+        posts.value = await loadJson('/api/v1/posts', { onPhase })
         phase.value = 'ready'
       } catch (e) {
-        if (!cancelled) phase.value = 'error'
+        phase.value = 'error'
       }
     }
 
     onMounted(loadPosts)
-    onBeforeUnmount(() => {
-      cancelled = true
-    })
 
     return { posts, phase, loadPosts }
   },

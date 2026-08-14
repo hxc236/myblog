@@ -66,8 +66,9 @@
 </template>
 
 <script>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { loadJson } from '@/api'
+import { usePhaseNotice } from '@/composables/usePhaseNotice'
 import SkillPanel from '@/components/SkillPanel.vue'
 import ProjectRow from '@/components/ProjectRow.vue'
 import PostRow from '@/components/PostRow.vue'
@@ -80,8 +81,7 @@ export default {
     const intro = ref(null)
     const projects = ref(null)
     const posts = ref(null)
-    const phase = ref('loading')
-    let cancelled = false
+    const { phase, onPhase } = usePhaseNotice()
 
     function scrollTo(id) {
       document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -89,16 +89,11 @@ export default {
 
     async function loadAll() {
       phase.value = 'loading'
-      const onPhase = (p) => {
-        // 过渡态：三秒提示启动中，随后提示正在重试；最终状态由下方 allSettled 决定
-        if (!cancelled && (p === 'starting' || p === 'retrying')) phase.value = p
-      }
       const [introResult, projectsResult, postsResult] = await Promise.allSettled([
         loadJson('/api/v1/introduction', { onPhase }),
         loadJson('/api/v1/projects', { onPhase }),
         loadJson('/api/v1/posts', { onPhase }),
       ])
-      if (cancelled) return
       if (introResult.status === 'fulfilled') intro.value = introResult.value
       if (projectsResult.status === 'fulfilled') projects.value = projectsResult.value
       if (postsResult.status === 'fulfilled') {
@@ -115,9 +110,6 @@ export default {
     }
 
     onMounted(loadAll)
-    onBeforeUnmount(() => {
-      cancelled = true
-    })
 
     return { intro, projects, posts, phase, scrollTo, loadAll }
   },
