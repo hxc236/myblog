@@ -119,6 +119,13 @@
         </dependency>
 
 
+        <!-- Spring Security OAuth2 Client：GitHub OAuth 登录（#16）。
+             仅用于认证唯一 Site Owner，不开放注册/角色管理/本地密码。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>
+        </dependency>
+
         <!-- web依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -142,6 +149,13 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
             <version>1.19.8</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- spring-security-test：OAuth2 登录替身（#16 安全测试，GitHub OAuth 测试替身） -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

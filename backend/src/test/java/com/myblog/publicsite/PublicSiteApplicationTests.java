@@ -259,6 +259,36 @@ class PublicSiteApplicationTests {
                 .andExpect(status().isNotFound());
     }
 
+    // ---- Admin API（#16）：未配置数据库时一律拒绝，fail closed ----
+
+    @Test
+    void adminApiRejectsAllRequestsWithoutConfiguredDatabase() throws Exception {
+        mockMvc.perform(get("/api/admin/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error").value("unauthorized"));
+        // 任意令牌（包括伪造/legacy JWT）都无法通过哈希校验 → 401
+        mockMvc.perform(get("/api/admin/me").header("Authorization", "Bearer whatever"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/admin/auth/exchange")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"code\":\"x\"}"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error").value("database_unavailable"));
+    }
+
+    @Test
+    void adminCorsAllowsExactOriginWithoutCredentials() throws Exception {
+        mockMvc.perform(options("/api/admin/me")
+                        .header("Origin", "http://localhost:8080")
+                        .header("Access-Control-Request-Method", "GET")
+                        .header("Access-Control-Request-Headers", "Authorization"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:8080"))
+                .andExpect(header().string("Access-Control-Allow-Headers",
+                        org.hamcrest.Matchers.containsString("Authorization")))
+                .andExpect(header().doesNotExist("Access-Control-Allow-Credentials"));
+    }
+
     // ---- 无效内容导致启动失败 ----
 
     @Test

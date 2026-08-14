@@ -9,6 +9,16 @@ server:
 # 公开站点应用（PublicSiteApplication）的跨域来源；生产仅由环境变量提供。
 site:
   origin: ${SITE_ORIGIN:}
+  admin:
+    # 唯一 Site Owner 的 GitHub 登录名 allowlist（逗号分隔，#14 用户故事 24）：
+    # OAuth 认证成功不是授权，必须命中此名单才能进入 Admin Console。
+    github-allowlist: ${GITHUB_ADMIN_ALLOWLIST:}
+    # 一次性交换码有效期（OAuth 回调 → Vue 换取令牌之间的窗口）
+    exchange-code-ttl: 5m
+    # 随机不透明会话令牌有效期（#14 实现决策：八小时）
+    session-ttl: 8h
+    # GitHub OAuth 凭据（#16）直接读环境变量 GITHUB_OAUTH_CLIENT_ID /
+    # GITHUB_OAUTH_CLIENT_SECRET；未配置时 Admin 登录入口不可用，其余功能不受影响。
 
 # 数据库读路径（#15）：配置 spring.datasource.url（或 DATABASE_URL，支持
 # postgres://、postgresql:// 与 jdbc:postgresql:// 形式，由
