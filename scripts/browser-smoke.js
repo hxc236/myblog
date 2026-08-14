@@ -62,9 +62,15 @@ async function consoleErrors(page) {
     })
     check('作品行含编号/标题/职责/技术栈/外链', firstRow.hasNumber && firstRow.hasTitle && firstRow.hasMeta && firstRow.hasAction)
     check('首页博客区最多三篇', (await page.evaluate(() => document.querySelectorAll('.post-row').length)) <= 3)
-    check('技能面板按后端/前端/交付分组', await page.evaluate(() => {
+    check('技能面板按新的五个能力域分组', await page.evaluate(() => {
       const names = [...document.querySelectorAll('.group-name')].map((el) => el.textContent)
-      return JSON.stringify(names) === JSON.stringify(['后端', '前端', '交付'])
+      return JSON.stringify(names) === JSON.stringify([
+        '全栈与桌面',
+        'AI 应用',
+        '数据与接口',
+        '工程交付',
+        '软件工程',
+      ])
     }))
     check('联系区邮箱与 GitHub 均可点击', await page.evaluate(() => {
       const links = [...document.querySelectorAll('#contact a')]
