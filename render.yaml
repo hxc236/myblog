@@ -1,0 +1,46 @@
+# Render Blueprint（#5 11. Render 部署）：一次创建双服务并自动互连环境变量。
+# 手动创建时的完整步骤与部署顺序见 docs/deploy.md。
+#
+# 注意：通过 Blueprint 创建后，服务名可能带随机后缀（如 myblog-api-xxxx），
+# 环境变量由 fromService 自动指向实际主机，无需手改。
+
+services:
+  # ---- API Web Service（Docker，Java 11）----
+  - type: web
+    name: myblog-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: Dockerfile
+    plan: free
+    region: singapore
+    healthCheckPath: /api/v1/health
+    envVars:
+      # 生产 CORS 只接受准确前端来源（来自前端静态站的实际主机）
+      - key: SITE_ORIGIN
+        fromService:
+          name: myblog-frontend
+          type: web
+          property: host
+      # 旧应用遗留凭据已移出活动配置；如需运行旧应用，另行提供（见 docs/deploy.md「秘密轮换」）
+      - key: JWT_SECRET
+        generateValue: true
+
+  # ---- Vue 静态站（SPA）----
+  - type: web
+    name: myblog-frontend
+    runtime: static
+    rootDir: myblogweb
+    buildCommand: npm ci && npm run build
+    publishPath: dist
+    envVars:
+      # 构建时写入 API 来源（来自 API 服务的实际主机）
+      - key: VUE_APP_API_BASE_URL
+        fromService:
+          name: myblog-api
+          type: web
+          property: host
+    routes:
+      # SPA 重写：非静态资源路径全部回到应用入口（Render 先命中真实静态资源）
+      - type: rewrite
+        source: /*
+        destination: /index.html

@@ -15,7 +15,20 @@ import java.util.UUID;
 @Component
 public class JwtUtil {
     public static final long JWT_TTL = 60 * 60 * 1000L * 24 * 14;  // 有效期14天
-    public static final String JWT_KEY = "ha04ha04ija048j304ijlzkdu8sdfg3brhiaefgaw3kjfabw3habwu3ra9w83agwu9bf";
+
+    /**
+     * JWT 签名密钥只从环境变量读取（#5 9. 安全与配置）。
+     * 历史硬编码值已随仓库公开，必须在任何使用旧登录功能的部署前轮换。
+     */
+    private static final String JWT_KEY = resolveJwtSecret();
+
+    private static String resolveJwtSecret() {
+        String secret = System.getenv("JWT_SECRET");
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("JWT_SECRET 环境变量未设置：旧应用登录功能需要它，且不得再使用已公开的硬编码密钥");
+        }
+        return secret;
+    }
 
     public static String getUUID() {
         return UUID.randomUUID().toString().replaceAll("-", "");
