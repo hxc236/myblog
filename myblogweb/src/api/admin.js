@@ -260,3 +260,39 @@ export async function deletePost(id) {
   }
   return { ok: false, message: (payload && payload.message) || `删除失败（HTTP ${status}）` }
 }
+
+/** Media Asset 管理（#24）。 */
+export async function fetchMedia() {
+  const { status, payload } = await adminFetch('/api/admin/media')
+  return status === 200 ? payload : null
+}
+
+export async function uploadMedia(file, altText) {
+  const token = getAdminToken()
+  const form = new FormData()
+  form.append('file', file)
+  if (altText) form.append('altText', altText)
+  const response = await fetch(`${API_BASE}/api/admin/media`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  })
+  let payload = null
+  try {
+    payload = await response.json()
+  } catch (e) {
+    // 忽略
+  }
+  if (response.status === 201) {
+    return { ok: true, payload }
+  }
+  return { ok: false, message: (payload && payload.message) || `上传失败（HTTP ${response.status}）` }
+}
+
+export async function deleteMedia(id) {
+  const { status, payload } = await adminFetch(`/api/admin/media/${id}`, { method: 'DELETE' })
+  if (status === 204) {
+    return { ok: true, payload: null }
+  }
+  return { ok: false, message: (payload && payload.message) || `删除失败（HTTP ${status}）` }
+}

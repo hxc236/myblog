@@ -78,7 +78,7 @@ class SiteApiDatabaseTest {
         // 七个迁移（#15–#20）都成功执行
         assertThat(jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM flyway_schema_history WHERE success", Integer.class))
-                .isEqualTo(9);
+                .isEqualTo(10);
     }
 
     @Test

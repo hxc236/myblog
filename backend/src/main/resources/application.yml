@@ -5,6 +5,11 @@ spring:
     # 管理端只能提交固定字段契约：未知字段（如隐私字段）一律 400（#17 隐私边界）
     deserialization:
       fail-on-unknown-properties: true
+  servlet:
+    multipart:
+      # 媒体上传上限（#24）：与 MediaContentValidator 的 5 MB 校验一致
+      max-file-size: 5MB
+      max-request-size: 6MB
 
 server:
   port: ${PORT:1816}

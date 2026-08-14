@@ -439,11 +439,29 @@ public class PostService {
         if (payload.bodyMarkdown != null && payload.bodyMarkdown.length() > 200_000) {
             throw new IllegalArgumentException("Markdown 正文过长");
         }
+        validateMarkdownSafety(payload.bodyMarkdown);
         if (payload.slug != null && !payload.slug.trim().isEmpty()) {
             validateSlugForPublish(payload.slug.trim(), postId, jdbc);
         }
         if (payload.tagIds != null && payload.tagIds.size() > 10) {
             throw new IllegalArgumentException("每篇文章最多 10 个标签");
+        }
+    }
+
+    /** Markdown 保存时拒绝危险原始 HTML（#24）；渲染后仍由 DOMPurify 兜底。 */
+    private void validateMarkdownSafety(String markdown) {
+        if (markdown == null || markdown.isEmpty()) {
+            return;
+        }
+        String lower = markdown.toLowerCase(Locale.ROOT);
+        for (String forbidden : new String[]{
+                "<script", "<iframe", "<object", "<embed", "<link", "<meta",
+                "javascript:", "onerror=", "onload=", "onclick=", "onmouseover=",
+                "<svg", "<math"}) {
+            if (lower.contains(forbidden)) {
+                throw new IllegalArgumentException(
+                        "Markdown 包含被禁止的危险 HTML（" + forbidden + "）");
+            }
         }
     }
 

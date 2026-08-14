@@ -275,6 +275,10 @@ class PublicSiteApplicationTests {
         mockMvc.perform(get("/api/posts/some-slug"))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.error").value("database_unavailable"));
+        // #24：公开媒体读取同样只来自数据库元数据
+        mockMvc.perform(get("/api/media/2026/01/abc"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error").value("database_unavailable"));
     }
 
     @Test

@@ -23,9 +23,14 @@ public final class TokenUtil {
 
     /** SHA-256 十六进制摘要；服务端只保存哈希（#14 实现决策）。 */
     public static String sha256Hex(String value) {
+        return sha256Hex(value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** SHA-256 十六进制摘要（字节内容，用于媒体文件校验值）。 */
+    public static String sha256Hex(byte[] content) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+            byte[] hash = digest.digest(content);
             StringBuilder hex = new StringBuilder(hash.length * 2);
             for (byte b : hash) {
                 hex.append(Character.forDigit((b >> 4) & 0xF, 16));
