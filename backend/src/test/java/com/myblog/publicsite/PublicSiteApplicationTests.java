@@ -9,8 +9,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
@@ -168,6 +172,35 @@ class PublicSiteApplicationTests {
         mockMvc.perform(get("/api/v1/projects")).andExpect(status().isOk());
         mockMvc.perform(get("/api/v1/posts")).andExpect(status().isOk());
         mockMvc.perform(get("/api/v1/health")).andExpect(status().isOk());
+    }
+
+    // ---- 方法限制与错误响应（#5 5. 公开 API 契约）----
+
+    @Test
+    void headRequestsAreSupportedWithoutBody() throws Exception {
+        mockMvc.perform(head("/api/v1/health"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(""));
+        mockMvc.perform(head("/api/v1/projects"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(""));
+    }
+
+    @Test
+    void writeMethodsAreRejected() throws Exception {
+        mockMvc.perform(post("/api/v1/projects")).andExpect(status().isMethodNotAllowed());
+        mockMvc.perform(put("/api/v1/posts/x")).andExpect(status().isMethodNotAllowed());
+        mockMvc.perform(delete("/api/v1/introduction")).andExpect(status().isMethodNotAllowed());
+    }
+
+    @Test
+    void unknownApiPathReturnsJson404WithoutStackLeak() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/v1/unknown-route"))
+                .andExpect(status().isNotFound())
+                .andReturn();
+        String body = result.getResponse().getContentAsString();
+        // 错误响应不得暴露堆栈、文件位置、环境变量或内容内部细节（#5 9. 安全与配置）
+        assertThat(body).doesNotContain("Exception", "Stack", "\\", "ContentLoader", "at com.myblog");
     }
 
     // ---- CORS ----
