@@ -1,5 +1,5 @@
 /**
- * Admin Console API 客户端（#16）。
+ * Admin Console API 客户端（#16/#17）。
  *
  * - 会话令牌只保存在 sessionStorage（#14 实现决策）：关闭浏览器后需要重新登录；
  * - 所有管理请求携带 `Authorization: Bearer <token>`，令牌不进入 URL；
@@ -77,4 +77,28 @@ export async function fetchMe() {
 /** 登出（撤销令牌）；调用方无论结果都应清理本地令牌。 */
 export async function requestLogout() {
   await adminFetch('/api/admin/auth/logout', { method: 'POST' })
+}
+
+/** 当前站点设置（编辑表单初始值）；401 时返回 null。 */
+export async function fetchSiteSettings() {
+  const { status, payload } = await adminFetch('/api/admin/site-settings')
+  if (status !== 200 || !payload) {
+    return null
+  }
+  return payload
+}
+
+/**
+ * 保存并发布整组站点设置（#17）；成功返回 { ok: true, payload }，
+ * 校验失败返回 { ok: false, message }。
+ */
+export async function publishSiteSettings(settings) {
+  const { status, payload } = await adminFetch('/api/admin/site-settings', {
+    method: 'PUT',
+    body: settings,
+  })
+  if (status === 200) {
+    return { ok: true, payload }
+  }
+  return { ok: false, message: (payload && payload.message) || `保存失败（HTTP ${status}）` }
 }

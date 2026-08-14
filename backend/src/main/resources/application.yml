@@ -2,6 +2,9 @@ spring:
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
+    # 管理端只能提交固定字段契约：未知字段（如隐私字段）一律 400（#17 隐私边界）
+    deserialization:
+      fail-on-unknown-properties: true
 
 server:
   port: ${PORT:1816}

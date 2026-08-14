@@ -1,6 +1,7 @@
 package com.myblog.publicsite.web;
 
 import com.myblog.publicsite.site.SiteIntroductionService;
+import com.myblog.publicsite.site.SiteSettingsService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
@@ -27,9 +28,12 @@ public class SiteApiController {
             CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic();
 
     private final SiteIntroductionService introductionService;
+    private final SiteSettingsService settingsService;
 
-    public SiteApiController(SiteIntroductionService introductionService) {
+    public SiteApiController(SiteIntroductionService introductionService,
+                             SiteSettingsService settingsService) {
         this.introductionService = introductionService;
+        this.settingsService = settingsService;
     }
 
     @GetMapping("/introduction")
@@ -41,6 +45,36 @@ public class SiteApiController {
             return ResponseEntity.ok()
                     .cacheControl(CONTENT_CACHE)
                     .body(introductionService.getIntroduction());
+        } catch (DataAccessException e) {
+            return unavailable();
+        }
+    }
+
+    /** 联系方式（#17）：公开邮箱、GitHub 链接、版权标识。 */
+    @GetMapping("/contact")
+    public ResponseEntity<?> contact() {
+        if (!settingsService.isAvailable()) {
+            return unavailable();
+        }
+        try {
+            return ResponseEntity.ok()
+                    .cacheControl(CONTENT_CACHE)
+                    .body(settingsService.getSettings().contact);
+        } catch (DataAccessException e) {
+            return unavailable();
+        }
+    }
+
+    /** 作品区设置（#17）：标题 + 可选副标题（空值前台不渲染）。 */
+    @GetMapping("/work-section")
+    public ResponseEntity<?> workSection() {
+        if (!settingsService.isAvailable()) {
+            return unavailable();
+        }
+        try {
+            return ResponseEntity.ok()
+                    .cacheControl(CONTENT_CACHE)
+                    .body(settingsService.getSettings().workSection);
         } catch (DataAccessException e) {
             return unavailable();
         }

@@ -248,6 +248,13 @@ class PublicSiteApplicationTests {
         // 未配置数据库时正式 API 不得退化为 MVP 文件读取（#15 验收）
         String body = result.getResponse().getContentAsString();
         assertThat(body).doesNotContain("hxc236", "skillGroups");
+        // #17：联系方式与作品区设置的正式公开读取同样只来自数据库
+        mockMvc.perform(get("/api/site/contact"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error").value("database_unavailable"));
+        mockMvc.perform(get("/api/site/work-section"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error").value("database_unavailable"));
     }
 
     @Test
