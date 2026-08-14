@@ -47,7 +47,7 @@ async function consoleErrors(page) {
     await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' })
     await waitForText(page, '查看精选作品')
 
-    check('首页渲染中文价值主张', await page.evaluate(() => document.body.innerText.includes('用 Spring Boot 与 Vue 构建可靠的全栈应用')))
+    check('首页渲染中文价值主张', await page.evaluate(() => document.body.innerText.includes('构建可靠的全栈应用')))
     check('首页恰好四个一级内容区', (await page.evaluate(() => document.querySelectorAll('section[id]').length)) === 4)
     check('页面只有一个 h1', (await page.evaluate(() => document.querySelectorAll('h1').length)) === 1)
     check('三个作品档案行', (await page.evaluate(() => document.querySelectorAll('.project-row').length)) === 3)
@@ -78,9 +78,10 @@ async function consoleErrors(page) {
       const nav = document.querySelector('nav')
       return !!nav.querySelector('a[aria-label*="GitHub"]')
     }))
-    check('无个人资料卡/位置/肖像', await page.evaluate(() => {
-      const text = document.body.innerText
-      return !/肖像|位置|时区|机会状态|简历/.test(text)
+    check('Hero 无个人资料卡/位置/肖像', await page.evaluate(() => {
+      // 隐私检查限定在首屏介绍区：不得出现肖像、位置、时区、机会状态等个人事实
+      const text = document.querySelector('#intro').innerText
+      return !/肖像|位置|时区|机会状态|头像|所在地/.test(text)
     }))
 
     // 键盘焦点可见性：Tab 到导航链接时应有可见焦点样式

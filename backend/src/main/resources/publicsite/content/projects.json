@@ -1,8 +1,8 @@
 [
   {
     "key": "personal-site-mvp",
-    "title": "个人主页与博客 MVP",
-    "summary": "从零搭建前后端分离的个人主页与博客：Spring Boot 提供匿名只读 API，Vue 渲染响应式页面，支持冷启动恢复与隐私安全的公开内容。",
+    "title": "个人主页与博客",
+    "summary": "从零搭建前后端分离的个人主页与博客系统：Spring Boot 提供匿名只读 API，Vue 3 渲染响应式页面，支持云端部署、冷启动恢复与隐私安全的公开内容展示。",
     "role": "独立开发（全栈）",
     "stack": ["Spring Boot", "Vue 3", "Java", "JavaScript", "Docker", "Render"],
     "year": "2026",
@@ -10,23 +10,23 @@
     "featuredOrder": 1
   },
   {
-    "key": "plans-todos",
-    "title": "计划与待办管理",
-    "summary": "在博客系统中设计计划与待办的数据表结构，完成 POJO 层与按用户查询的服务实现，为首页聚合展示做准备。",
-    "role": "后端开发",
-    "stack": ["Spring Boot", "MyBatis-Plus", "MySQL"],
+    "key": "jobhunt-ai-helper",
+    "title": "AI 求职助手",
+    "summary": "围绕岗位匹配度构建本地求职闭环，整合职位采集、规则评分、简历优化、学习规划与模拟面试；通过结构化校验、状态机和用户确认约束 Agent 输出，保护本地求职隐私数据。",
+    "role": "独立开发（AI 应用全栈）",
+    "stack": ["Electron", "Vue 3", "TypeScript", "SQLite", "Agent SDK", "Vitest"],
     "year": "2026",
-    "repositoryUrl": "https://github.com/hxc236/myblog",
+    "repositoryUrl": "https://github.com/hxc236/jobhunt-ai-helper",
     "featuredOrder": 2
   },
   {
-    "key": "account-jwt",
-    "title": "登录注册与 JWT 认证",
-    "summary": "实现基于 JWT 的登录注册闭环：BCrypt 密码加密、令牌校验过滤器、认证信息服务与跨域配置。",
-    "role": "后端开发",
-    "stack": ["Spring Boot", "Spring Security", "JWT", "BCrypt"],
+    "key": "personal-workbench",
+    "title": "Personal Workbench",
+    "summary": "构建本机优先的 AI 软件开发工作台，以 GitHub Issue DAG 驱动任务执行，通过独立 Worktree、检查点恢复、自动化验收和人工审批管理从需求规划到安全合并的完整开发流程。",
+    "role": "独立开发（Agent 工程与全栈）",
+    "stack": ["TypeScript", "Vue 3", "Node.js", "SQLite", "Pi Agent", "GitHub"],
     "year": "2026",
-    "repositoryUrl": "https://github.com/hxc236/myblog",
+    "repositoryUrl": "https://github.com/hxc236/personal-workbench",
     "featuredOrder": 3
   }
 ]
