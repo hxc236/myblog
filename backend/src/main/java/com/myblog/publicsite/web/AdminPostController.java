@@ -5,6 +5,7 @@ import com.myblog.publicsite.posts.PostService;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -96,6 +97,65 @@ public class AdminPostController {
                 return notFound();
             }
             return ResponseEntity.ok().cacheControl(NO_STORE).body(detail);
+        } catch (IllegalArgumentException e) {
+            return validationFailed(e);
+        }
+    }
+
+    /** 修订历史（#22）：全部不可变修订，标记当前已发布版本。 */
+    @GetMapping("/{id}/revisions")
+    public ResponseEntity<?> revisions(@PathVariable long id) {
+        if (!postService.isAvailable()) {
+            return unavailable();
+        }
+        if (postService.getPostDetail(id) == null) {
+            return notFound();
+        }
+        return ResponseEntity.ok().cacheControl(NO_STORE).body(postService.listRevisions(id));
+    }
+
+    /** 恢复历史修订为新的 Draft（#22）：预览确认后再发布。 */
+    @PostMapping("/{id}/restore")
+    public ResponseEntity<?> restore(@PathVariable long id,
+                                     @RequestBody(required = false) Map<String, Long> body) {
+        if (!postService.isAvailable()) {
+            return unavailable();
+        }
+        Long revisionId = body == null ? null : body.get("revisionId");
+        if (revisionId == null) {
+            return validationFailed(new IllegalArgumentException("缺少 revisionId"));
+        }
+        AdminPostDetail detail = postService.restoreRevision(id, revisionId);
+        if (detail == null) {
+            return notFound();
+        }
+        return ResponseEntity.ok().cacheControl(NO_STORE).body(detail);
+    }
+
+    /** 撤回并归档（#22）：公开指针置空，历史修订保留。 */
+    @PostMapping("/{id}/archive")
+    public ResponseEntity<?> archive(@PathVariable long id) {
+        if (!postService.isAvailable()) {
+            return unavailable();
+        }
+        AdminPostDetail detail = postService.archive(id);
+        if (detail == null) {
+            return validationFailed(new IllegalArgumentException("只能归档当前已发布的文章"));
+        }
+        return ResponseEntity.ok().cacheControl(NO_STORE).body(detail);
+    }
+
+    /** 永久删除：只允许从未发布的 Draft（#22）。 */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable long id) {
+        if (!postService.isAvailable()) {
+            return unavailable();
+        }
+        try {
+            if (!postService.deletePost(id)) {
+                return notFound();
+            }
+            return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             return validationFailed(e);
         }

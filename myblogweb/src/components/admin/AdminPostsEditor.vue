@@ -21,6 +21,19 @@
               · {{ post.updatedAt ? formatTime(post.updatedAt) : '' }}
             </span>
           </button>
+          <div class="post-actions">
+            <button class="btn btn-secondary btn-sm" @click="openPost(post.id)">编辑</button>
+            <button
+              v-if="post.state === 'draft'"
+              class="btn btn-secondary btn-sm danger-text"
+              @click="removePost(post)"
+            >删除</button>
+            <button
+              v-if="post.state === 'published' || post.state === 'draft_published'"
+              class="btn btn-secondary btn-sm"
+              @click="doArchive(post)"
+            >归档</button>
+          </div>
         </li>
       </ul>
     </template>
@@ -80,6 +93,32 @@
             <button class="btn btn-secondary" :disabled="saving || publishing" @click="publish">
               {{ publishing ? '正在发布…' : '发布' }}
             </button>
+            <button
+              v-if="detail.state === 'published' || detail.state === 'draft_published'"
+              class="btn btn-secondary"
+              :disabled="saving"
+              @click="doArchive(detail)"
+            >归档（撤回公开）</button>
+            <button
+              v-if="detail.state === 'draft'"
+              class="btn btn-secondary danger-text"
+              :disabled="saving"
+              @click="removePost(detail)"
+            >删除此草稿</button>
+          </div>
+
+          <div v-if="revisions" class="revisions-panel">
+            <h2 class="admin-section-title">修订历史</h2>
+            <ul class="revision-list">
+              <li v-for="rev in revisions" :key="rev.revisionId" class="revision-row">
+                <span class="revision-title">{{ rev.title || '（空标题）' }}</span>
+                <span v-if="rev.published" class="revision-badge">当前已发布</span>
+                <span class="revision-meta">
+                  v{{ rev.revisionNo }} · {{ rev.createdAt ? formatTime(rev.createdAt) : '' }}
+                </span>
+                <button class="btn btn-secondary btn-sm" @click="restore(rev)">恢复为草稿</button>
+              </li>
+            </ul>
           </div>
         </section>
 
@@ -98,12 +137,16 @@
 import { onMounted, ref, watch } from 'vue'
 import MarkdownView from '@/components/MarkdownView.vue'
 import {
+  archivePost,
   createPost,
+  deletePost,
   fetchCategories,
   fetchPost,
   fetchPosts,
+  fetchRevisions,
   fetchTags,
   publishPost,
+  restoreRevision,
   savePostDraft,
 } from '@/api/admin'
 
@@ -120,6 +163,7 @@ export default {
     const view = ref('list')
     const posts = ref(null)
     const detail = ref(null)
+    const revisions = ref(null)
     const categories = ref([])
     const tags = ref([])
     const form = ref({ title: '', summary: '', bodyMarkdown: '', slug: '', categoryId: null, tagIds: [] })
@@ -138,7 +182,7 @@ export default {
     })
 
     function stateLabel(state) {
-      return { draft: '草稿', published: '已发布', draft_published: '草稿+已发布' }[state] || state
+      return { draft: '草稿', published: '已发布', draft_published: '草稿+已发布', archived: '已归档' }[state] || state
     }
 
     function formatTime(iso) {
@@ -172,6 +216,7 @@ export default {
       }
       detail.value = detailData
       posts.value = await fetchPosts()
+      revisions.value = await fetchRevisions(id)
       // 本地暂存恢复：比服务端更新的未保存内容优先
       const stashed = readStash(id)
       if (stashed) {
@@ -275,6 +320,76 @@ export default {
       }
     }
 
+    async function doArchive(target) {
+      if (!window.confirm('确认归档（撤回公开）这篇文章？历史修订将保留，可随时恢复。')) {
+        return
+      }
+      saving.value = true
+      error.value = ''
+      notice.value = ''
+      try {
+        const result = await archivePost(target.id)
+        if (!result.ok) {
+          error.value = result.message
+          return
+        }
+        detail.value = result.payload
+        posts.value = await fetchPosts()
+        notice.value = '已归档：公开页面已下线该文章。'
+      } catch (e) {
+        error.value = '无法连接管理服务，请稍后重试。'
+      } finally {
+        saving.value = false
+      }
+    }
+
+    async function removePost(target) {
+      if (!window.confirm('确认永久删除这篇从未发布的草稿？此操作不可恢复。')) {
+        return
+      }
+      saving.value = true
+      error.value = ''
+      notice.value = ''
+      try {
+        const result = await deletePost(target.id)
+        if (!result.ok) {
+          error.value = result.message
+          return
+        }
+        clearStash(target.id)
+        view.value = 'list'
+        detail.value = null
+        posts.value = await fetchPosts()
+        notice.value = '草稿已删除。'
+      } catch (e) {
+        error.value = '无法连接管理服务，请稍后重试。'
+      } finally {
+        saving.value = false
+      }
+    }
+
+    async function restore(rev) {
+      if (!window.confirm(`确认把修订 v${rev.revisionNo}「${rev.title}」恢复为新的草稿？线上内容不会被直接覆盖。`)) {
+        return
+      }
+      saving.value = true
+      error.value = ''
+      notice.value = ''
+      try {
+        const result = await restoreRevision(detail.value.id, rev.revisionId)
+        if (!result.ok) {
+          error.value = result.message
+          return
+        }
+        await openPost(detail.value.id)
+        notice.value = '已恢复为草稿，请预览确认后再次发布。'
+      } catch (e) {
+        error.value = '无法连接管理服务，请稍后重试。'
+      } finally {
+        saving.value = false
+      }
+    }
+
     function payload() {
       return {
         title: form.value.title,
@@ -287,8 +402,9 @@ export default {
     }
 
     return {
-      view, posts, detail, categories, tags, form, notice, error, saving, publishing, stashedAt,
+      view, posts, detail, revisions, categories, tags, form, notice, error, saving, publishing, stashedAt,
       stateLabel, formatTime, newPost, openPost, backToList, saveDraft, publish,
+      doArchive, removePost, restore,
     }
   },
 }
@@ -495,5 +611,59 @@ export default {
 .admin-hint {
   color: var(--body-muted, #5d584c);
   font-size: 14px;
+}
+
+.post-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-sm {
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+.danger-text {
+  color: #a63d2f;
+}
+
+.revisions-panel {
+  margin-top: 20px;
+  border-top: 1px solid var(--line, #e6e0d4);
+}
+
+.revision-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.revision-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line, #e6e0d4);
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+.revision-title {
+  flex: 1;
+  font-weight: 600;
+}
+
+.revision-badge {
+  font-size: 12px;
+  background: #e2efe7;
+  color: #2f6b4f;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.revision-meta {
+  font-size: 13px;
+  color: var(--meta-quiet, #8b8577);
 }
 </style>

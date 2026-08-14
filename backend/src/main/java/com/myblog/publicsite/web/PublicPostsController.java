@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Map;
@@ -55,7 +56,7 @@ public class PublicPostsController {
         }
     }
 
-    /** 稳定 slug 对应的 Published Revision 详情。 */
+    /** 稳定 slug 对应的 Published Revision 详情；历史 slug 返回永久 301（#22）。 */
     @GetMapping("/api/posts/{slug}")
     public ResponseEntity<?> detail(@PathVariable String slug,
                                     javax.servlet.http.HttpServletRequest request) {
@@ -63,13 +64,20 @@ public class PublicPostsController {
             return unavailable();
         }
         try {
-            Object detail = postService.getPublishedBySlug(slug);
-            if (detail == null) {
+            PublicPostService.ResolvedSlug resolved = postService.resolvePublishedSlug(slug);
+            if (resolved == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .cacheControl(CacheControl.noStore())
                         .body(Map.of("error", "not_found"));
             }
-            return withEtag(detail, request);
+            if (resolved.redirectToSlug != null) {
+                // 旧 slug 永久 301 到当前 slug（归档后目标不再已发布 → 上面 404）
+                return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                        .location(URI.create("/api/posts/" + resolved.redirectToSlug))
+                        .cacheControl(CacheControl.noCache())
+                        .build();
+            }
+            return withEtag(resolved.detail, request);
         } catch (DataAccessException e) {
             return unavailable();
         }

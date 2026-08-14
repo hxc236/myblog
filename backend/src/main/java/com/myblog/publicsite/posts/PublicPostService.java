@@ -96,6 +96,39 @@ public class PublicPostService {
             return null;
         }
         JdbcTemplate jdbc = requireJdbc();
+        return queryPublishedBySlug(jdbc, slug);
+    }
+
+    /**
+     * slug 解析（#22）：当前已发布 slug 直接命中；历史 slug 命中且目标文章
+     * 当前仍已发布时返回重定向目标；归档文章的任意 slug 返回 null（站内 404）。
+     */
+    public ResolvedSlug resolvePublishedSlug(String slug) {
+        if (slug == null || slug.length() > MAX_SLUG_LENGTH
+                || !SLUG_PATTERN.matcher(slug.toLowerCase(Locale.ROOT)).matches()) {
+            return null;
+        }
+        JdbcTemplate jdbc = requireJdbc();
+        PublicPostDetail detail = queryPublishedBySlug(jdbc, slug);
+        if (detail != null) {
+            ResolvedSlug resolved = new ResolvedSlug();
+            resolved.detail = detail;
+            return resolved;
+        }
+        String currentSlug = jdbc.query(
+                "SELECT p.slug FROM post_slug_redirects r"
+                        + "  JOIN posts p ON p.id = r.post_id"
+                        + " WHERE r.old_slug = ? AND p.published_revision_id IS NOT NULL",
+                rs -> rs.next() ? rs.getString("slug") : null, slug);
+        if (currentSlug != null) {
+            ResolvedSlug resolved = new ResolvedSlug();
+            resolved.redirectToSlug = currentSlug;
+            return resolved;
+        }
+        return null;
+    }
+
+    private PublicPostDetail queryPublishedBySlug(JdbcTemplate jdbc, String slug) {
         PublicPostDetail detail = jdbc.query(
                 "SELECT p.id, p.slug, p.last_published_at, p.category_id, c.name AS category_name,"
                         + " pr.title, pr.summary, pr.body_markdown"
@@ -131,6 +164,13 @@ public class PublicPostService {
                         detail.tagIds.add(rs.getLong("tag_id")),
                 detail.id);
         return detail;
+    }
+
+    /** slug 解析结果：命中详情或 301 重定向目标（二选一）。 */
+    public static class ResolvedSlug {
+
+        public PublicPostDetail detail;
+        public String redirectToSlug;
     }
 
     private void attachTags(JdbcTemplate jdbc, List<PublicPostSummary> items) {

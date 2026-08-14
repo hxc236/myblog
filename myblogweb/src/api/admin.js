@@ -225,3 +225,38 @@ export async function publishPost(id) {
   }
   return { ok: false, message: (payload && payload.message) || `发布失败（HTTP ${status}）` }
 }
+
+/** 修订历史与归档（#22）。 */
+export async function fetchRevisions(id) {
+  const { status, payload } = await adminFetch(`/api/admin/posts/${id}/revisions`)
+  return status === 200 ? payload : null
+}
+
+export async function restoreRevision(id, revisionId) {
+  const { status, payload } = await adminFetch(`/api/admin/posts/${id}/restore`, {
+    method: 'POST',
+    body: { revisionId },
+  })
+  if (status === 200) {
+    return { ok: true, payload }
+  }
+  return { ok: false, message: (payload && payload.message) || `恢复失败（HTTP ${status}）` }
+}
+
+export async function archivePost(id) {
+  const { status, payload } = await adminFetch(`/api/admin/posts/${id}/archive`, {
+    method: 'POST',
+  })
+  if (status === 200) {
+    return { ok: true, payload }
+  }
+  return { ok: false, message: (payload && payload.message) || `归档失败（HTTP ${status}）` }
+}
+
+export async function deletePost(id) {
+  const { status, payload } = await adminFetch(`/api/admin/posts/${id}`, { method: 'DELETE' })
+  if (status === 204) {
+    return { ok: true, payload: null }
+  }
+  return { ok: false, message: (payload && payload.message) || `删除失败（HTTP ${status}）` }
+}
