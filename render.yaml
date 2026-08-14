@@ -31,7 +31,7 @@ services:
     runtime: static
     rootDir: myblogweb
     buildCommand: npm ci && npm run build
-    publishPath: dist
+    staticPublishPath: dist
     envVars:
       # 构建时写入 API 来源（来自 API 服务的实际主机）
       - key: VUE_APP_API_BASE_URL
