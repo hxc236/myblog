@@ -21,14 +21,17 @@ docs/      规格、设计、部署文档
 
 ## 本地开发
 
-```bash
-# 后端（Java 11）
-cd backend
-mvn spring-boot:run -Dspring-boot.run.profiles=dev \
-  -Dspring-boot.run.main-class=com.myblog.publicsite.PublicSiteApplication
-# 或打包后运行：java -jar target/backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
+环境变量方式跨 Git Bash / PowerShell 通用（PowerShell 7.3+ 会拆分含 `=` 的 `-D` 参数，故不用 `-D`）：
 
-# 前端（Vue 3，读取 .env.development 的 API 来源）
+```bash
+# 后端（Java 11，公开站点应用，端口 1816）
+export JAVA_HOME="C:\Program Files\Java\jdk-11.0.12"   # PowerShell: $env:JAVA_HOME='C:\Program Files\Java\jdk-11.0.12'
+export SPRING_PROFILES_ACTIVE=dev                       # PowerShell: $env:SPRING_PROFILES_ACTIVE='dev'
+cd backend
+mvn spring-boot:run
+# 或打包后运行：java -jar target/backend-0.0.1-SNAPSHOT.jar
+
+# 前端（Vue 3，端口 8080，读取 .env.development 的 API 来源）
 cd myblogweb
 npm install
 npm run serve
