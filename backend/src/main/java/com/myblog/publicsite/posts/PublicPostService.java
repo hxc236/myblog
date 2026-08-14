@@ -173,6 +173,86 @@ public class PublicPostService {
         public String redirectToSlug;
     }
 
+    /**
+     * 搜索（#23）：只覆盖标题与摘要（post_search_documents 投影），1–50 字符。
+     * 1–2 字符使用有结果上限（20）的 ILIKE；3 字符及以上由 pg_trgm GIN 索引
+     * 加速（上限 50）。排序：标题匹配 > 摘要匹配 > 最近发布时间。
+     */
+    public PublicPage searchPublished(String q, int page, int pageSize,
+                                      Long categoryId, Long tagId) {
+        if (q == null || q.trim().isEmpty()) {
+            throw new IllegalArgumentException("搜索词不能为空");
+        }
+        String query = q.trim();
+        if (query.length() > 50) {
+            throw new IllegalArgumentException("搜索词最多 50 个字符");
+        }
+        JdbcTemplate jdbc = requireJdbc();
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.min(Math.max(pageSize, 1), MAX_PAGE_SIZE);
+        String like = "%" + query + "%";
+        int resultLimit = query.length() <= 2 ? 20 : 50;
+
+        List<Object> whereParams = new ArrayList<>();
+        whereParams.add(like); // title ILIKE
+        whereParams.add(like); // summary ILIKE
+        StringBuilder where = new StringBuilder(
+                " WHERE (d.title ILIKE ? OR d.summary ILIKE ?)"
+                        + " AND p.published_revision_id IS NOT NULL");
+        if (categoryId != null) {
+            where.append(" AND p.category_id = ?");
+            whereParams.add(categoryId);
+        }
+        if (tagId != null) {
+            where.append(" AND EXISTS (SELECT 1 FROM post_tags pt WHERE pt.post_id = p.id AND pt.tag_id = ?)");
+            whereParams.add(tagId);
+        }
+
+        Integer total = jdbc.queryForObject(
+                "SELECT count(*) FROM post_search_documents d"
+                        + "  JOIN posts p ON p.id = d.post_id" + where,
+                Integer.class, whereParams.toArray());
+        List<Object> mainParams = new ArrayList<>();
+        mainParams.add(like); // title_match
+        mainParams.add(like); // summary_match
+        mainParams.addAll(whereParams);
+        List<PublicPostSummary> items = new ArrayList<>();
+        jdbc.query(
+                "SELECT p.id, p.slug, p.last_published_at, p.category_id, c.name AS category_name,"
+                        + " d.title, d.summary,"
+                        + " (d.title ILIKE ?) AS title_match,"
+                        + " (d.summary ILIKE ?) AS summary_match"
+                        + "  FROM post_search_documents d"
+                        + "  JOIN posts p ON p.id = d.post_id"
+                        + "  LEFT JOIN categories c ON c.id = p.category_id"
+                        + where
+                        + " ORDER BY title_match DESC, summary_match DESC,"
+                        + "          p.last_published_at DESC, p.id DESC"
+                        + " LIMIT ? OFFSET ?",
+                (org.springframework.jdbc.core.RowCallbackHandler) rs -> {
+                    PublicPostSummary s = new PublicPostSummary();
+                    s.id = rs.getLong("id");
+                    s.slug = rs.getString("slug");
+                    s.title = rs.getString("title");
+                    s.summary = rs.getString("summary");
+                    OffsetDateTime publishedAt = rs.getObject("last_published_at", OffsetDateTime.class);
+                    s.publishedAt = publishedAt == null ? null : publishedAt.toString();
+                    long categoryIdValue = rs.getLong("category_id");
+                    s.categoryId = rs.wasNull() ? null : categoryIdValue;
+                    s.categoryName = rs.getString("category_name");
+                    s.tagIds = new ArrayList<>();
+                    items.add(s);
+                },
+                appendParams(mainParams, resultLimit, (long) (safePage - 1) * safeSize));
+        attachTags(jdbc, items);
+        PublicPage result = new PublicPage();
+        result.items = items;
+        result.page = safePage;
+        result.pageSize = safeSize;
+        result.total = Math.min(total == null ? 0 : total, resultLimit);
+        return result;
+    }
+
     private void attachTags(JdbcTemplate jdbc, List<PublicPostSummary> items) {
         if (items.isEmpty()) {
             return;

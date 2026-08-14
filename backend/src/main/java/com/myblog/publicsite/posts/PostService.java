@@ -400,6 +400,21 @@ public class PostService {
         return jdbc.update("DELETE FROM posts WHERE id = ?", id) > 0;
     }
 
+    /**
+     * 从 Published Revision 全量重建搜索投影（#23）：投影不是第二权威源，
+     * 损坏时无需恢复第二份内容。
+     */
+    @Transactional
+    public int rebuildSearchIndex() {
+        JdbcTemplate jdbc = requireJdbc();
+        jdbc.update("DELETE FROM post_search_documents");
+        return jdbc.update(
+                "INSERT INTO post_search_documents (post_id, title, summary, updated_at)"
+                        + " SELECT p.id, pr.title, pr.summary, p.last_published_at"
+                        + "   FROM posts p"
+                        + "   JOIN post_revisions pr ON pr.id = p.published_revision_id");
+    }
+
     /** 修订历史条目。 */
     public static class RevisionItem {
 

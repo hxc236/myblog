@@ -38,19 +38,27 @@ public class PublicPostsController {
         this.objectMapper = objectMapper;
     }
 
-    /** 分页列表：按最近发布时间倒序；category / tag 精确过滤。 */
+    /** 分页列表 / 搜索：q 存在时进入搜索模式（标题+摘要、标题优先）。 */
     @GetMapping("/api/posts")
     public ResponseEntity<?> list(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) Long category,
             @RequestParam(required = false) Long tag,
+            @RequestParam(required = false) String q,
             javax.servlet.http.HttpServletRequest request) {
         if (!postService.isAvailable()) {
             return unavailable();
         }
         try {
-            return withEtag(postService.listPublished(page, pageSize, category, tag), request);
+            Object payload = (q == null || q.trim().isEmpty())
+                    ? postService.listPublished(page, pageSize, category, tag)
+                    : postService.searchPublished(q, page, pageSize, category, tag);
+            return withEtag(payload, request);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .cacheControl(CacheControl.noStore())
+                    .body(Map.of("error", "validation_failed", "message", e.getMessage()));
         } catch (DataAccessException e) {
             return unavailable();
         }

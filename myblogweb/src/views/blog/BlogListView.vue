@@ -12,6 +12,8 @@
 
     <LoadStateNotice :phase="phase" @retry="loadPosts" />
 
+    <ReadingHistoryPanel />
+
     <router-link class="back-home" to="/">← 返回首页</router-link>
   </div>
 </template>
@@ -21,11 +23,12 @@ import { onMounted, ref } from 'vue'
 import { loadJson } from '@/api'
 import { usePhaseNotice } from '@/composables/usePhaseNotice'
 import PostRow from '@/components/PostRow.vue'
+import ReadingHistoryPanel from '@/components/ReadingHistoryPanel.vue'
 import LoadStateNotice from '@/components/LoadStateNotice.vue'
 
 export default {
   name: 'BlogListView',
-  components: { PostRow, LoadStateNotice },
+  components: { PostRow, LoadStateNotice, ReadingHistoryPanel },
   setup() {
     const posts = ref(null)
     const { phase, onPhase } = usePhaseNotice()
