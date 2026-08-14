@@ -19,6 +19,22 @@
     </properties>
     <dependencies>
 
+        <!-- PostgreSQL 驱动：数据库读路径（#15+）与 Flyway 迁移共用；版本由 Boot 父项目管理 -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Flyway：空 PostgreSQL 上建立数据库结构（#15）。显式固定 9.22.3：
+             Boot 2.7 默认的 8.5 不支持 PostgreSQL 15+/Neon；9.x 的数据库支持
+             仍内置于 flyway-core（10.x 才拆分为 flyway-database-postgresql）。 -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>9.22.3</version>
+        </dependency>
+
         <!-- mybatis依赖 -->
         <dependency>
             <groupId>org.mybatis</groupId>
@@ -112,6 +128,20 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Testcontainers：以真实 PostgreSQL 验证 Flyway、约束与数据库行为（#15 测试决策） -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>1.19.8</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>1.19.8</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

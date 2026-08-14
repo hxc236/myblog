@@ -236,6 +236,29 @@ class PublicSiteApplicationTests {
                         org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("POST"))));
     }
 
+    // ---- 正式领域 API（#14 / #15）----
+
+    @Test
+    void formalSiteApiRequiresConfiguredDatabaseAndNeverFallsBackToFiles() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/site/introduction"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.error").value("database_unavailable"))
+                .andReturn();
+        // 未配置数据库时正式 API 不得退化为 MVP 文件读取（#15 验收）
+        String body = result.getResponse().getContentAsString();
+        assertThat(body).doesNotContain("hxc236", "skillGroups");
+    }
+
+    @Test
+    void noVersionedApiPathIsAddedOrReliedUpon() throws Exception {
+        // 正式 API 只使用无版本领域语义路径，/api/v2 及其他版本路径不存在（#14 API 约束）
+        mockMvc.perform(get("/api/v2/introduction"))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v2/site/introduction"))
+                .andExpect(status().isNotFound());
+    }
+
     // ---- 无效内容导致启动失败 ----
 
     @Test

@@ -9,3 +9,9 @@ server:
 # 公开站点应用（PublicSiteApplication）的跨域来源；生产仅由环境变量提供。
 site:
   origin: ${SITE_ORIGIN:}
+
+# 数据库读路径（#15）：配置 spring.datasource.url（或 DATABASE_URL，支持
+# postgres://、postgresql:// 与 jdbc:postgresql:// 形式，由
+# DatabaseUrlEnvironmentPostProcessor 转换）后，Flyway 在空 PostgreSQL 上
+# 建立结构并写入初始值，Public Introduction 的权威源切到数据库；未配置时
+# 公开站点按 MVP 文件读路径回退启动，正式 /api/site/* 返回 503。
