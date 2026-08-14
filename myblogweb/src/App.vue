@@ -1,23 +1,36 @@
 <template>
-  <NavBar />
-  <router-view />
+  <SiteNav />
+  <main id="main">
+    <router-view />
+  </main>
+  <ContactSection :intro="intro" :loading="loading" />
 </template>
 
 <script>
-import NavBar from '@/components/NavBar.vue';
-import "bootstrap/dist/css/bootstrap.min.css"
-import "bootstrap/dist/js/bootstrap"
+import { onMounted, ref } from 'vue'
+import SiteNav from '@/components/SiteNav.vue'
+import ContactSection from '@/components/ContactSection.vue'
+import { sharedLoad } from '@/api'
 
 export default {
-  components: {
-    NavBar,
+  name: 'App',
+  components: { SiteNav, ContactSection },
+  setup() {
+    // 联系区（#contact）由全局页脚提供；介绍内容冷启动失败时保留 GitHub 静态入口
+    const intro = ref(null)
+    const loading = ref(true)
+
+    onMounted(async () => {
+      try {
+        intro.value = await sharedLoad('/api/v1/introduction')
+      } catch (e) {
+        intro.value = null
+      } finally {
+        loading.value = false
+      }
+    })
+
+    return { intro, loading }
   },
 }
 </script>
-
-<style>
-body {
-  background-image: url("@/assets/images/background.jpg");
-  background-size: cover;
-}
-</style>

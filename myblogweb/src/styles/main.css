@@ -1,0 +1,157 @@
+/* ============================================================
+   个人主页 MVP 视觉系统（Design.md §4）
+   方案 A 浅色编辑式基底 + 方案 C 作品档案行（浅色化）
+   ============================================================ */
+
+:root {
+  --paper: #f4f0e7;
+  --surface: #fbf9f3;
+  --ink: #17211b;
+  --forest: #326a4a;
+  --signal: #dfff78;
+  --body-muted: #687069;
+  --meta-quiet: #8b908c;
+  --rule: rgba(23, 33, 27, 0.15);
+
+  --font-serif: "STSong", "SimSun", "Songti SC", "Noto Serif CJK SC",
+    "Source Han Serif SC", Georgia, "Times New Roman", serif;
+  --font-sans: system-ui, -apple-system, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+
+  --content-max: 1180px;
+  --radius-small: 12px;
+  --radius-nav: 18px;
+  --radius-panel: 28px;
+  --transition: 180ms ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 键盘焦点：所有交互元素保留可见焦点 */
+:focus-visible {
+  outline: 2px solid var(--forest);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+h1, h2, h3, .serif {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+a {
+  color: var(--forest);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+a:hover {
+  color: var(--ink);
+}
+
+/* 页面骨架：内容最大宽度 1180，留白 ≥20px（<620px 为 14px） */
+.page {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+@media (max-width: 620px) {
+  .page {
+    padding: 0 14px;
+  }
+}
+
+/* 通用胶囊按钮，触控高度 ≥44px */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 26px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition), color var(--transition),
+    border-color var(--transition), transform var(--transition);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background-color: var(--ink);
+  color: var(--paper);
+}
+
+.btn-primary:hover {
+  background-color: var(--forest);
+  color: var(--paper);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border-color: var(--rule);
+  color: var(--ink);
+}
+
+.btn-secondary:hover {
+  border-color: var(--forest);
+  color: var(--forest);
+}
+
+/* 章节锚点：固定导航下滚动到位 */
+section[id] {
+  scroll-margin-top: 96px;
+}
+
+/* 章节标题 */
+.section-title {
+  font-size: clamp(26px, 3vw, 34px);
+  margin: 0 0 12px;
+}
+
+/* 中性骨架（冷启动时静态结构立即渲染） */
+.skeleton {
+  border-radius: var(--radius-small);
+  background: rgba(23, 33, 27, 0.07);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* 尊重 prefers-reduced-motion：关闭动效后内容仍完整可用 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}

@@ -1,92 +1,41 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import store from '@/store'
 
 import HomePageView from '@/views/home/HomePageView'
-import NewsAndPostView from '@/views/news/NewsAndPostView'
-import ChatRoomView from '@/views/chat/ChatRoomView'
-import CodingAndComplierView from '@/views/coding/CodingAndComplierView'
-import UserAccountLoginView from '@/views/user/account/UserAccountLoginView'
-import UserAccountRegisterView from '@/views/user/account/UserAccountRegisterView'
+import BlogListView from '@/views/blog/BlogListView'
+import BlogPostView from '@/views/blog/BlogPostView'
 import NotFoundView from '@/views/error/NotFoundView'
 
+// 生产首页与博客路由（#5「页面与路由」）。
+// 旧 /home/、/news/、/chatroom/、/coding/、登录和注册入口不出现在生产导航，
+// 统一重定向到新首页或博客列表，不激活旧功能。
 const routes = [
-  {
-    path: "/",
-    name: "home",
-    redirect: "/home/",
-  },
-  {
-    path: "/home/",
-    name: "home_index",
-    component: HomePageView,
-    meta: {
-      requestAuth: false,
-    }
-  },
-  {
-    path: "/news/",
-    name: "news_index",
-    component: NewsAndPostView,
-    meta: {
-      requestAuth: false,
-    }
-  },
-  {
-    path: "/chatroom/",
-    name: "chatroom_index",
-    component: ChatRoomView,
-    meta: {
-      requestAuth: false,
-    }
-  },
-  {
-    path: "/coding/",
-    name: "coding_index",
-    component: CodingAndComplierView,
-    meta: {
-      requestAuth: false,
-    }
-  },
-  {
-    path: "/account/login/",
-    name: "login_index",
-    component: UserAccountLoginView,
-    meta: {
-      requestAuth: false,
-    }
-  },
-  {
-    path: "/account/register/",
-    name: "register_index",
-    component: UserAccountRegisterView,
-    meta: {
-      requestAuth: false,
-    }
-  },
-  {
-    path: "/404/",
-    name: "404",
-    component: NotFoundView,
-    meta: {
-      requestAuth: false,
-    }
-  },
-  {
-    path: "/:catchAll(.*)",
-    redirect: "/404/"
-  }
+  { path: '/', name: 'home', component: HomePageView },
+  { path: '/blog', name: 'blog', component: BlogListView },
+  { path: '/blog/:slug', name: 'blog-post', component: BlogPostView },
+  { path: '/404', name: 'not-found', component: NotFoundView },
+
+  // 旧入口重定向（不得激活旧功能）
+  { path: '/home/', redirect: '/' },
+  { path: '/news/', redirect: '/blog' },
+  { path: '/chatroom/', redirect: '/' },
+  { path: '/coding/', redirect: '/' },
+  { path: '/account/login/', redirect: '/' },
+  { path: '/account/register/', redirect: '/' },
+  { path: '/404/', redirect: '/404' },
+
+  // 未知路由：站内 404，保留 URL，提供返回路径
+  { path: '/:catchAll(.*)', name: 'not-found-any', component: NotFoundView },
 ]
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
 })
 
-router.beforeEach((to, from, next) => { //to 表示跳转到哪个页面，from表示从哪个页面跳转来的，next将页面要不要执行下一步操作
-  if (to.meta.requestAuth && !store.state.user.is_login) {
-    next({ name: "login_index" });
-  } else {
-    next();
+// 从博客详情回到首页时始终滚动到顶部，避免残留锚点
+router.afterEach((to) => {
+  if (to.path === '/') {
+    window.scrollTo(0, 0)
   }
 })
 
