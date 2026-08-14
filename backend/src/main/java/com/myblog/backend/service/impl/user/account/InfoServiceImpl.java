@@ -23,6 +23,7 @@ public class InfoServiceImpl implements InfoService {
         res.put("id", user.getUserId().toString());
         res.put("username", user.getUsername());
         res.put("photo", user.getPhoto());
+        res.put("nickname", user.getNickname());
         return res;
     }
 }

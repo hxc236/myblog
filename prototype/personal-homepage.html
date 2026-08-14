@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="hxc236 —— Java 全栈工程师个人主页原型：公开介绍、精选作品、博客与联系。">
+<title>hxc236 · Java 全栈工程师 — 个人主页</title>
+<style>
+  :root{
+    --paper:#F4F0E7; --surface:#FBF9F3; --ink:#17211B; --forest:#326A4A;
+    --signal:#DFFF78; --muted:#687069; --quiet:#8B908C;
+    --rule:rgba(23,33,27,.15);
+    --serif:Georgia,"Noto Serif SC","Source Han Serif SC","Songti SC","STSong","SimSun",serif;
+    --sans:system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden;overflow-x:clip}
+  a{color:inherit;text-decoration:none}
+  ul{list-style:none}
+  img{max-width:100%}
+
+  /* 可访问性 */
+  .skip{position:fixed;top:10px;left:10px;z-index:100;padding:12px 18px;border-radius:999px;background:var(--ink);color:var(--paper);font-size:14px;transform:translateY(-240%);transition:transform .18s}
+  .skip:focus-visible{transform:none}
+  :focus-visible{outline:2px solid var(--forest);outline-offset:3px;border-radius:6px}
+  [id]{scroll-margin-top:110px}
+
+  /* 导航 */
+  .nav{position:fixed;top:16px;left:0;right:0;z-index:50;display:flex;justify-content:center;padding-inline:14px;pointer-events:none}
+  .nav-inner{pointer-events:auto;display:flex;align-items:center;gap:12px;width:min(1180px,100%);padding:8px 10px 8px 14px;border:1px solid var(--rule);border-radius:18px;background:color-mix(in srgb,var(--surface) 82%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:background .2s,box-shadow .2s}
+  .nav.scrolled .nav-inner{background:color-mix(in srgb,var(--surface) 95%,transparent);box-shadow:0 10px 28px -14px rgba(23,33,27,.18)}
+  .brand{display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:16px;min-height:44px}
+  .brand-mark{width:34px;height:34px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-family:var(--serif);font-size:19px;line-height:1}
+  .nav-links{display:none;gap:2px}
+  .nav-links a{display:inline-flex;align-items:center;min-height:44px;padding:10px 14px;font-size:15px;color:var(--muted);border-radius:12px;transition:color .18s}
+  .nav-links a:hover{color:var(--forest)}
+  .nav-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .btn-github{display:none}
+  @media(min-width:900px){
+    .nav-links{display:flex;margin-inline:auto}
+    .nav-actions{margin-left:0}
+    .btn-github{display:inline-flex}
+    .nav-menu{display:none}
+  }
+  @media(max-width:620px){.nav{top:10px}}
+
+  /* 窄屏折叠菜单 */
+  .nav-menu{position:relative}
+  .nav-menu summary{list-style:none;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 16px;border:1px solid var(--rule);border-radius:999px;background:var(--surface);font-size:14.5px;font-weight:600;cursor:pointer;transition:border-color .18s}
+  .nav-menu summary::-webkit-details-marker{display:none}
+  .nav-menu summary:hover{border-color:var(--forest)}
+  .nav-menu[open] summary{border-color:var(--forest)}
+  .menu-panel{position:absolute;top:calc(100% + 10px);right:0;z-index:60;min-width:212px;background:var(--surface);border:1px solid var(--rule);border-radius:18px;padding:8px;box-shadow:0 18px 44px -22px rgba(23,33,27,.24);display:flex;flex-direction:column}
+  .menu-panel a{display:flex;align-items:center;min-height:44px;padding:10px 14px;border-radius:12px;font-size:15px;color:var(--muted);transition:background .18s,color .18s}
+  .menu-panel a:hover{background:var(--paper);color:var(--forest)}
+  .menu-panel hr{border:none;border-top:1px solid var(--rule);margin:6px 2px}
+
+  /* 按钮 */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:12px 24px;border-radius:999px;font-size:15.5px;font-weight:600;border:1px solid transparent;cursor:pointer;transition:background .18s,color .18s,border-color .18s,transform .18s}
+  .btn-primary{background:var(--ink);color:var(--paper)}
+  .btn-primary:hover{background:color-mix(in oklab,var(--ink) 86%,var(--forest));transform:translateY(-1px)}
+  .btn-ghost{background:transparent;border-color:var(--rule);color:var(--ink)}
+  .btn-ghost:hover{border-color:var(--forest);color:var(--forest)}
+  .btn-nav{min-height:44px;padding:9px 18px;font-size:14.5px;background:var(--ink);color:var(--paper)}
+  .btn-nav:hover{background:color-mix(in oklab,var(--ink) 86%,var(--forest))}
+
+  /* 首屏 */
+  .hero{max-width:1180px;margin:0 auto;padding:clamp(118px,16vh,168px) clamp(14px,3vw,24px) clamp(64px,8vw,110px);display:grid;grid-template-columns:1.22fr .78fr;gap:clamp(40px,5vw,72px);align-items:center}
+  @media(max-width:899px){.hero{grid-template-columns:1fr}}
+  .eyebrow{display:inline-flex;align-items:center;gap:12px;font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--forest)}
+  .eyebrow::before{content:"";width:26px;height:1px;background:currentColor;opacity:.75}
+  h1{font-family:var(--serif);font-weight:700;font-size:clamp(40px,11vw,52px);line-height:1.2;letter-spacing:-.01em;margin:22px 0 24px;text-wrap:balance}
+  @media(min-width:900px){h1{font-size:clamp(52px,6.2vw,88px);line-height:1.12}}
+  .lede{max-width:54ch;font-size:17.5px;line-height:1.75}
+  .hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:34px}
+  .hero-note{margin-top:22px;font-size:14.5px;color:var(--muted)}
+  .hero-note a{color:var(--forest);font-weight:600;text-decoration:underline;text-underline-offset:3px;transition:color .18s}
+  .hero-note a:hover{color:color-mix(in oklab,var(--forest) 76%,var(--ink))}
+
+  /* 技能面板 */
+  .panel{background:var(--surface);border:1px solid var(--rule);border-radius:28px;padding:clamp(24px,3vw,32px);box-shadow:0 1px 2px rgba(23,33,27,.04),0 18px 44px -22px rgba(23,33,27,.18)}
+  .panel-head{display:flex;align-items:center;gap:14px;padding-bottom:20px;border-bottom:1px solid var(--rule)}
+  .avatar{width:56px;height:56px;border-radius:50%;background:var(--ink);color:var(--paper);font-family:var(--serif);font-size:26px;display:grid;place-items:center}
+  .panel-name{font-family:var(--serif);font-size:21px;font-weight:700}
+  .panel-tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+  .panel-block{padding:20px 0;border-bottom:1px solid var(--rule)}
+  .panel-block:last-of-type{border-bottom:none;padding-bottom:0}
+  .label{display:block;font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chips li{font-family:var(--mono);font-size:12.5px;color:var(--muted);padding:6px 12px;border:1px solid var(--rule);border-radius:12px;background:var(--paper)}
+  .panel-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:20px;font-size:14px;color:var(--muted)}
+  .panel-foot a{color:var(--forest);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+
+  /* 章节骨架 */
+  .section{max-width:1180px;margin:0 auto;padding:clamp(64px,9vw,120px) clamp(14px,3vw,24px)}
+  .section h2{font-family:var(--serif);font-size:clamp(30px,3.8vw,46px);font-weight:700;margin:16px 0 12px}
+  .section-sub{color:var(--muted);font-size:16.5px;max-width:56ch;margin-bottom:clamp(36px,5vw,56px)}
+
+  /* 作品区（方案 C 工程档案行 → 方案 A 浅色） */
+  .work-list{border-top:1px solid var(--rule)}
+  .work{border-bottom:1px solid var(--rule);display:grid;grid-template-columns:64px minmax(0,1.05fr) minmax(0,1fr) 170px;grid-template-areas:"no main meta link";gap:28px;padding:26px 18px;border-radius:16px;transition:background .18s}
+  .work:hover{background:var(--surface)}
+  .work-no{grid-area:no;font-family:var(--mono);font-size:13px;color:var(--quiet);padding-top:6px}
+  .work-main{grid-area:main}
+  .work-main h3{font-family:var(--serif);font-size:clamp(19px,2vw,23px);font-weight:700;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .work-summary{font-size:15.5px;color:var(--muted);line-height:1.7;margin-top:6px;max-width:46ch}
+  .work-meta{grid-area:meta;font-size:14px;color:var(--muted);line-height:1.8;padding-top:2px;overflow-wrap:anywhere}
+  .work-meta .mono{font-size:12.5px}
+  .work-link{grid-area:link;justify-self:end;align-self:start;padding-top:4px;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+  .link{color:var(--forest);font-weight:600;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;transition:color .18s,text-decoration-thickness .18s}
+  .link:hover{color:color-mix(in oklab,var(--forest) 76%,var(--ink));text-decoration-thickness:2px}
+  .link-muted{display:inline-flex;align-items:center;min-height:44px;font-family:var(--mono);font-size:12.5px;color:var(--muted);border:1px dashed color-mix(in srgb,var(--ink) 28%,transparent);border-radius:999px;padding:9px 14px}
+  .tag{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--muted);border:1px dashed color-mix(in srgb,var(--ink) 30%,transparent);border-radius:999px;padding:3px 9px;font-weight:400;vertical-align:2px}
+  @media(max-width:899px){
+    .work{grid-template-columns:44px minmax(0,1fr);grid-template-areas:"no main" "meta meta" "link link";gap:10px 16px;padding:22px 6px}
+    .work-link{justify-self:start;align-items:flex-start}
+  }
+
+  /* 博客 */
+  .post-list{border-top:1px solid var(--rule)}
+  .post{display:grid;grid-template-columns:104px minmax(0,1fr) 96px 76px;grid-template-areas:"date title time link";gap:20px;align-items:baseline;padding:22px 18px;border-bottom:1px solid var(--rule);border-radius:16px;transition:background .18s}
+  .post:hover{background:var(--surface)}
+  .post time{grid-area:date;font-family:var(--mono);font-size:13px;color:var(--muted)}
+  .post h3{grid-area:title;font-family:var(--serif);font-size:19px;font-weight:600;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .post .readtime{grid-area:time;font-family:var(--mono);font-size:12.5px;color:var(--muted);text-align:right}
+  .post .link{grid-area:link;justify-self:end;min-height:44px;display:inline-flex;align-items:center}
+  .more{margin-top:30px;text-align:right}
+  @media(max-width:899px){
+    .post{grid-template-columns:1fr 1fr;grid-template-areas:"date date" "title title" "time link";row-gap:10px;padding:20px 6px}
+    .post .readtime{text-align:left}
+  }
+
+  /* 页脚（联系方式） */
+  footer{background:var(--ink);color:var(--paper)}
+  .footer-inner{max-width:1180px;margin:0 auto;padding:clamp(64px,8vw,96px) clamp(14px,3vw,24px)}
+  .footer-eyebrow{display:inline-flex;align-items:center;gap:12px;font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:color-mix(in srgb,var(--paper) 62%,transparent)}
+  .footer-eyebrow::before{content:"";width:26px;height:1px;background:currentColor;opacity:.75}
+  .footer-close{font-family:var(--serif);font-size:clamp(28px,3.6vw,42px);font-weight:700;line-height:1.3;margin:22px 0 10px;max-width:24ch}
+  .footer-mail{display:inline-block;font-family:var(--serif);font-size:clamp(22px,2.6vw,30px);color:var(--signal);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:5px;padding-block:8px;transition:color .18s,text-decoration-thickness .18s}
+  .footer-mail:hover{color:color-mix(in srgb,var(--signal) 78%,var(--paper));text-decoration-thickness:2px}
+  .footer-meta{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;margin-top:clamp(40px,6vw,64px);padding-top:24px;border-top:1px solid color-mix(in srgb,var(--paper) 18%,transparent);font-size:14px;color:color-mix(in srgb,var(--paper) 62%,transparent)}
+  .footer-meta a{text-decoration:underline;text-underline-offset:3px;transition:color .18s}
+  .footer-meta a:hover{color:var(--signal)}
+
+  /* 减少动效 */
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{transition:none!important;animation:none!important}
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#content" data-od-id="skip-link">跳到主要内容</a>
+
+<header class="nav" data-od-id="nav" aria-label="站点导航">
+  <div class="nav-inner">
+    <a class="brand" href="#top" data-od-id="nav-brand">
+      <span class="brand-mark" aria-hidden="true">h</span>
+      hxc236
+    </a>
+    <nav class="nav-links" aria-label="主导航">
+      <a href="#top">介绍</a>
+      <a href="#works">作品</a>
+      <a href="#blog">博客</a>
+      <a href="#contact">联系</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="btn btn-nav btn-github" href="https://github.com/hxc236" target="_blank" rel="noopener" aria-label="GitHub 主页（外部链接）" data-od-id="nav-github">GitHub ↗</a>
+      <a class="btn btn-nav" href="mailto:hello@example.com" data-od-id="nav-contact">联系</a>
+      <details class="nav-menu" data-od-id="nav-menu">
+        <summary>菜单</summary>
+        <div class="menu-panel">
+          <a href="#top">介绍</a>
+          <a href="#works">作品</a>
+          <a href="#blog">博客</a>
+          <a href="#contact">联系</a>
+          <hr>
+          <a href="https://github.com/hxc236" target="_blank" rel="noopener" aria-label="GitHub 主页（外部链接）">GitHub 主页 ↗</a>
+        </div>
+      </details>
+    </div>
+  </div>
+</header>
+
+<main id="content">
+  <!-- 首屏 · 公开介绍 -->
+  <section class="hero" id="top" data-od-id="hero" aria-labelledby="hero-title">
+    <div>
+      <p class="eyebrow">Full-Stack Engineer · Portfolio</p>
+      <h1 id="hero-title">把产品做到<br>可部署 · 可验证 · 可交付</h1>
+      <p class="lede">你好，我是 hxc236，一名 Java 全栈工程师。我构建中文优先、前后端分离的 Web 产品，把「可部署、可验证」当作默认标准：内容随仓库版本管理，部署可重复执行，接口经过契约测试。</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#works" data-od-id="hero-cta-primary">查看精选作品<span aria-hidden="true"> ↓</span></a>
+        <a class="btn btn-ghost" href="mailto:hello@example.com" data-od-id="hero-cta-mail">给我发邮件</a>
+      </div>
+      <p class="hero-note">更多代码见 <a href="https://github.com/hxc236" target="_blank" rel="noopener" data-od-id="hero-github">GitHub · hxc236 ↗</a>（外部链接）</p>
+    </div>
+
+    <aside class="panel" data-od-id="hero-panel" aria-label="身份与技能技术栈">
+      <div class="panel-head">
+        <span class="avatar" aria-hidden="true">h</span>
+        <div>
+          <p class="panel-name">hxc236</p>
+          <p class="panel-tag">Java Full-Stack</p>
+        </div>
+      </div>
+      <div class="panel-block">
+        <p class="label">后端</p>
+        <ul class="chips" aria-label="后端技术栈">
+          <li>Java 11</li>
+          <li>Spring Boot 2.7</li>
+          <li>REST API</li>
+          <li>契约测试</li>
+        </ul>
+      </div>
+      <div class="panel-block">
+        <p class="label">前端</p>
+        <ul class="chips" aria-label="前端技术栈">
+          <li>Vue 3</li>
+          <li>组件化界面</li>
+          <li>前后端分离</li>
+        </ul>
+      </div>
+      <div class="panel-block">
+        <p class="label">交付</p>
+        <ul class="chips" aria-label="交付技术栈">
+          <li>Docker</li>
+          <li>Render</li>
+          <li>可重复构建</li>
+        </ul>
+      </div>
+      <div class="panel-foot">
+        <a href="https://github.com/hxc236" target="_blank" rel="noopener" data-od-id="panel-github">GitHub ↗</a>
+        <span style="font-family:var(--mono);font-size:13px">2025</span>
+      </div>
+    </aside>
+  </section>
+
+  <!-- 作品 -->
+  <section class="section" id="works" data-od-id="works" aria-labelledby="works-title">
+    <p class="eyebrow">Selected Work</p>
+    <h2 id="works-title">精选作品</h2>
+    <p class="section-sub">按成果挑选的工作——不是仓库列表，而是每一件事解决了什么。</p>
+
+    <div class="work-list">
+      <article class="work" data-od-id="work-01">
+        <span class="work-no" aria-hidden="true">01</span>
+        <div class="work-main">
+          <h3>个人主页 MVP</h3>
+          <p class="work-summary">一天上线：把实验性仓库收敛为可部署、可验证、无数据库依赖的中文优先个人主页，前后端分别部署为两个 Render 服务。</p>
+        </div>
+        <div class="work-meta">
+          <p>全栈开发 · 独立交付</p>
+          <p class="mono">Java 11 / Spring Boot 2.7 / Vue 3 / Docker</p>
+          <p class="mono">2025</p>
+        </div>
+        <div class="work-link">
+          <a class="link" href="https://github.com/hxc236/myblog" target="_blank" rel="noopener" aria-label="个人主页 MVP 代码仓库（外部链接）" data-od-id="work-01-repo">代码仓库 ↗</a>
+          <span class="link-muted">在线演示 · 部署后开放</span>
+        </div>
+      </article>
+
+      <article class="work" data-od-id="work-02">
+        <span class="work-no" aria-hidden="true">02</span>
+        <div class="work-main">
+          <h3>精选作品（待补充）<span class="tag">占位</span></h3>
+          <p class="work-summary">站点所有者确认真实成果与外部链接后替换。</p>
+        </div>
+        <div class="work-meta">
+          <p>角色待补充</p>
+          <p class="mono">技术栈待补充</p>
+          <p class="mono">20——</p>
+        </div>
+        <div class="work-link">
+          <span class="link-muted">链接待补充</span>
+        </div>
+      </article>
+
+      <article class="work" data-od-id="work-03">
+        <span class="work-no" aria-hidden="true">03</span>
+        <div class="work-main">
+          <h3>精选作品（待补充）<span class="tag">占位</span></h3>
+          <p class="work-summary">站点所有者确认真实成果与外部链接后替换。</p>
+        </div>
+        <div class="work-meta">
+          <p>角色待补充</p>
+          <p class="mono">技术栈待补充</p>
+          <p class="mono">20——</p>
+        </div>
+        <div class="work-link">
+          <span class="link-muted">链接待补充</span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 博客 -->
+  <section class="section" id="blog" data-od-id="blog" aria-labelledby="blog-title">
+    <p class="eyebrow">Writing</p>
+    <h2 id="blog-title">博客</h2>
+    <p class="section-sub">关于产品与工程的笔记。</p>
+
+    <div class="post-list">
+      <article class="post" data-od-id="post-01">
+        <time datetime="2025-06">2025.06</time>
+        <h3>博客文章占位（一）<span class="tag">占位</span></h3>
+        <p class="readtime">约 6 分钟</p>
+        <a class="link" href="#" data-od-id="post-01-link">阅读 →</a>
+      </article>
+      <article class="post" data-od-id="post-02">
+        <time datetime="2025-05">2025.05</time>
+        <h3>博客文章占位（二）<span class="tag">占位</span></h3>
+        <p class="readtime">约 4 分钟</p>
+        <a class="link" href="#" data-od-id="post-02-link">阅读 →</a>
+      </article>
+      <article class="post" data-od-id="post-03">
+        <time datetime="2025-04">2025.04</time>
+        <h3>博客文章占位（三）<span class="tag">占位</span></h3>
+        <p class="readtime">约 8 分钟</p>
+        <a class="link" href="#" data-od-id="post-03-link">阅读 →</a>
+      </article>
+    </div>
+    <p class="more"><a class="link" href="#" data-od-id="blog-more">查看全部文章 →</a></p>
+  </section>
+</main>
+
+<!-- 页脚 · 联系方式 -->
+<footer id="contact" data-od-id="footer" aria-labelledby="footer-close">
+  <div class="footer-inner">
+    <p class="footer-eyebrow">Contact</p>
+    <p class="footer-close" id="footer-close">对我的工作感兴趣？欢迎来信聊聊。</p>
+    <a class="footer-mail" href="mailto:hello@example.com" data-od-id="footer-email">hello@example.com</a>
+    <div class="footer-meta">
+      <a href="https://github.com/hxc236" target="_blank" rel="noopener" aria-label="GitHub 主页（外部链接）" data-od-id="footer-github">GitHub · hxc236 ↗</a>
+      <p>© 2025 hxc236 · 用 Spring Boot 与 Vue 构建</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var nav=document.querySelector('.nav');
+  function onScroll(){ nav.classList.toggle('scrolled', window.scrollY>8); }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+})();
+</script>
+</body>
+</html>

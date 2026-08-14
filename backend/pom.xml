@@ -18,18 +18,21 @@
     </properties>
     <dependencies>
 
+        <!-- mybatis依赖 -->
         <dependency>
             <groupId>org.mybatis</groupId>
             <artifactId>mybatis</artifactId>
             <version>3.5.10</version>
         </dependency>
 
+        <!-- Springboot启动器依赖 -->
         <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-jdbc -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
             <version>3.0.4</version>
         </dependency>
+
 
         <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
         <dependency>
@@ -39,6 +42,7 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- mysql-connector-j依赖，MySQL官方提供 -->
         <!-- https://mvnrepository.com/artifact/com.mysql/mysql-connector-j -->
         <dependency>
             <groupId>com.mysql</groupId>
@@ -46,6 +50,7 @@
             <version>8.0.32</version>
         </dependency>
 
+        <!-- mybatisplus依赖 -->
         <!-- https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-boot-starter -->
         <dependency>
             <groupId>com.baomidou</groupId>
@@ -53,6 +58,7 @@
             <version>3.5.3.1</version>
         </dependency>
 
+        <!-- 基于mybatisplus生成类的依赖 -->
         <!-- https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-generator -->
         <dependency>
             <groupId>com.baomidou</groupId>
@@ -67,6 +73,7 @@
             <version>3.0.4</version>
         </dependency>
 
+        <!-- Java JWT (JSON Web Token) 库的组成部分 jjwt-api、jjwt-impl、jjwt-jackson -->
         <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -97,7 +104,7 @@
         </dependency>
 
 
-
+        <!-- web依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>

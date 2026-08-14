@@ -2,6 +2,7 @@ package com.myblog.backend.service.impl.plansandtodos.plan;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.myblog.backend.mapper.PlanMapper;
+import com.myblog.backend.mapper.TodoMapper;
 import com.myblog.backend.pojo.User;
 import com.myblog.backend.service.plansandtodos.plan.PlanInfoService;
 import com.myblog.backend.utils.UserDetailsImpl;
@@ -19,6 +20,9 @@ public class PlanInfoServiceImpl implements PlanInfoService {
 
     @Autowired
     private PlanMapper planMapper;
+
+    @Autowired
+    private TodoMapper todoMapper;
 
     @Override
     public Map<String, Object> getPlanInfo() {
