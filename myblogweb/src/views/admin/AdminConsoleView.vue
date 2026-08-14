@@ -28,6 +28,13 @@
       >
         项目管理
       </button>
+      <button
+        class="admin-tab"
+        :class="{ active: activeTab === 'taxonomy' }"
+        @click="activeTab = 'taxonomy'"
+      >
+        分类与标签
+      </button>
     </nav>
 
     <template v-if="activeTab === 'settings'">
@@ -147,8 +154,12 @@
       </footer>
     </template>
 
-    <template v-else>
+    <template v-else-if="activeTab === 'projects'">
       <AdminProjectsEditor />
+    </template>
+
+    <template v-else>
+      <AdminTaxonomyEditor />
     </template>
   </div>
 </template>
@@ -157,6 +168,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminProjectsEditor from '@/components/admin/AdminProjectsEditor.vue'
+import AdminTaxonomyEditor from '@/components/admin/AdminTaxonomyEditor.vue'
 import {
   clearAdminToken,
   fetchMe,
@@ -172,7 +184,7 @@ import {
  */
 export default {
   name: 'AdminConsoleView',
-  components: { AdminProjectsEditor },
+  components: { AdminProjectsEditor, AdminTaxonomyEditor },
   setup() {
     const router = useRouter()
     const me = ref(null)

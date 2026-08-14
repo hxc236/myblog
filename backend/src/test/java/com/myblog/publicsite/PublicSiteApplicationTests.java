@@ -261,6 +261,13 @@ class PublicSiteApplicationTests {
                 .andExpect(jsonPath("$.error").value("database_unavailable"));
         mockMvc.perform(get("/api/admin/projects"))
                 .andExpect(status().isUnauthorized());
+        // #19：分类与标签的公开读取同样只来自数据库
+        mockMvc.perform(get("/api/categories"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error").value("database_unavailable"));
+        mockMvc.perform(get("/api/tags"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error").value("database_unavailable"));
     }
 
     @Test

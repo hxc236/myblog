@@ -146,3 +146,45 @@ export async function deleteProject(id) {
   }
   return { ok: false, message: (payload && payload.message) || `删除失败（HTTP ${status}）` }
 }
+
+/** 分类管理（#19）。 */
+async function taxonomyResult(result, okStatus, okLabel) {
+  if (result.status === okStatus) {
+    return { ok: true, payload: result.payload }
+  }
+  return { ok: false, message: (result.payload && result.payload.message) || `${okLabel}失败（HTTP ${result.status}）` }
+}
+
+export async function fetchCategories() {
+  const { status, payload } = await adminFetch('/api/admin/categories')
+  return status === 200 ? payload : null
+}
+
+export async function createCategory(name) {
+  return taxonomyResult(await adminFetch('/api/admin/categories', { method: 'POST', body: { name } }), 201, '添加分类')
+}
+
+export async function renameCategory(id, name) {
+  return taxonomyResult(await adminFetch(`/api/admin/categories/${id}`, { method: 'PUT', body: { name } }), 200, '保存分类')
+}
+
+export async function deleteCategory(id) {
+  return taxonomyResult(await adminFetch(`/api/admin/categories/${id}`, { method: 'DELETE' }), 204, '删除分类')
+}
+
+export async function fetchTags() {
+  const { status, payload } = await adminFetch('/api/admin/tags')
+  return status === 200 ? payload : null
+}
+
+export async function createTag(name) {
+  return taxonomyResult(await adminFetch('/api/admin/tags', { method: 'POST', body: { name } }), 201, '添加标签')
+}
+
+export async function renameTag(id, name) {
+  return taxonomyResult(await adminFetch(`/api/admin/tags/${id}`, { method: 'PUT', body: { name } }), 200, '保存标签')
+}
+
+export async function deleteTag(id) {
+  return taxonomyResult(await adminFetch(`/api/admin/tags/${id}`, { method: 'DELETE' }), 204, '删除标签')
+}
