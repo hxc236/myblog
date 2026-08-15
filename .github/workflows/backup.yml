@@ -1,0 +1,72 @@
+name: database-and-media-backup
+
+on:
+  schedule:
+    # 每日 03:23 UTC（#28：每日逻辑备份）
+    - cron: '23 3 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Dump database (logical, custom format)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pg_dump "$DATABASE_URL" --format=custom --no-owner --no-privileges > backup.dump
+
+      - name: Encrypt with offline public key
+        env:
+          BACKUP_PUBLIC_KEY: ${{ secrets.BACKUP_PUBLIC_KEY }}
+        run: |
+          printf '%s\n' "$BACKUP_PUBLIC_KEY" > backup-public-key.asc
+          gpg --batch --yes --trust-model always --recipient-file backup-public-key.asc \
+            --output backup.dump.gpg --encrypt backup.dump
+          rm -f backup.dump backup-public-key.asc
+
+      - name: Upload database backup to private bucket (R2)
+        env:
+          R2_BACKUP_ENDPOINT: ${{ secrets.R2_BACKUP_ENDPOINT }}
+          R2_BACKUP_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          R2_BACKUP_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          R2_BACKUP_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+        run: |
+          export AWS_ACCESS_KEY_ID="$R2_BACKUP_ACCESS_KEY_ID"
+          export AWS_SECRET_ACCESS_KEY="$R2_BACKUP_SECRET_ACCESS_KEY"
+          export AWS_EC2_METADATA_DISABLED=true
+          DAY=$(date +%Y%m%d)
+          aws --endpoint-url "$R2_BACKUP_ENDPOINT" s3 cp backup.dump.gpg \
+            "s3://$R2_BACKUP_BUCKET/db/daily-$DAY.dump.gpg"
+          if [ "$(date +%u)" = "7" ]; then
+            aws --endpoint-url "$R2_BACKUP_ENDPOINT" s3 cp backup.dump.gpg \
+              "s3://$R2_BACKUP_BUCKET/db/weekly-$DAY.dump.gpg"
+          fi
+
+      - name: Mirror Media Asset binaries (media bucket → backup bucket)
+        env:
+          R2_MEDIA_ENDPOINT: ${{ secrets.R2_MEDIA_ENDPOINT }}
+          R2_MEDIA_BUCKET: ${{ secrets.R2_MEDIA_BUCKET }}
+          R2_BACKUP_ENDPOINT: ${{ secrets.R2_BACKUP_ENDPOINT }}
+          R2_BACKUP_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          R2_BACKUP_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          R2_BACKUP_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+        run: |
+          export AWS_ACCESS_KEY_ID="$R2_BACKUP_ACCESS_KEY_ID"
+          export AWS_SECRET_ACCESS_KEY="$R2_BACKUP_SECRET_ACCESS_KEY"
+          export AWS_EC2_METADATA_DISABLED=true
+          # 媒体与备份桶同属一个 R2 账户时可直接同步；否则按 docs/backup.md 配置
+          aws --endpoint-url "$R2_BACKUP_ENDPOINT" s3 sync \
+            "s3://$R2_MEDIA_BUCKET/" "s3://$R2_BACKUP_BUCKET/media/"
+
+      - name: Retention (14 daily / 8 weekly)
+        env:
+          R2_BACKUP_ENDPOINT: ${{ secrets.R2_BACKUP_ENDPOINT }}
+          R2_BACKUP_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          R2_BACKUP_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          R2_BACKUP_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+        run: bash scripts/backup-retention.sh
