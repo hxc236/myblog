@@ -115,3 +115,41 @@ NODE_PATH=myblogweb/node_modules node scripts/browser-smoke.js   # 24/24 通过
 Render Free API 闲置约 15 分钟后休眠，首次请求需要约一分钟唤醒。
 页面会显示启动提示并自动重试（窗口 ≤75 秒），最终失败提供手动重试按钮。
 当求职投递期的第一印象受到影响时，升级为持续在线实例。
+
+## 7. 第二阶段切换与回退（#29）
+
+### 7.1 上线前准备
+
+在 Render 控制台为 `myblog-api` 配置以下环境变量（值来自 Neon / GitHub OAuth /
+R2 / 离线密钥，不进入仓库）：
+
+- `DATABASE_URL`（Neon，`postgres://...`，本应用自动转换为 JDBC）
+- `GITHUB_OAUTH_CLIENT_ID` / `GITHUB_OAUTH_CLIENT_SECRET`
+- `GITHUB_ADMIN_ALLOWLIST`（唯一 Site Owner 的 GitHub 登录名）
+- `SITE_MEDIA_STORAGE=s3`、`R2_ENDPOINT`、`R2_ACCESS_KEY_ID`、
+  `R2_SECRET_ACCESS_KEY`、`R2_BUCKET`、`R2_PUBLIC_BASE_URL`
+- `BACKUP_PUBLIC_KEY` 等备份 Secrets 见 `docs/backup.md`
+
+GitHub OAuth 回调地址必须与 Render 实际域名一致：
+`https://<api-host>/login/oauth2/code/github`。
+
+### 7.2 切换步骤（先记录版本，再上线）
+
+1. 记录当前生产版本：`git rev-parse HEAD`（前端与后端必须在**同一个提交**，
+   即“匹配的旧前端和旧后端部署”）。
+2. 执行备份恢复演练（`docs/backup.md`）并保留 PASS 输出。
+3. 可选：以管理 API 执行一次 MVP 导入（`POST /api/admin/import/mvp`）。
+4. 部署新后端 → 部署新前端（Render Blueprint 同一提交）。
+5. 验收：`/api/v1/health`、`/api/site/introduction`、`/api/posts`、
+   RSS/Sitemap；Admin Console 登录 → 发布一篇草稿 → Visitor 可见。
+
+### 7.3 回退（失败时，不引入并行 URL 版本）
+
+1. Render 控制台 → 两个服务各自的 **Deploy history**。
+2. 分别选择**上一个成功部署**（同一记录提交），重新部署。
+3. 验证 `/api/v1/health` 与公开页面内容回到旧文件读路径。
+4. 回退后旧 JSON、Markdown 与 `/api/v1` 仍是只读回退快照；修复问题后在
+   新的同一提交上重新执行 7.2。
+
+> 规则（#14）：回退通过恢复旧前端与旧后端部署完成，**不得**以长期并存的
+> URL 版本（如 `/api/v2`）实现；`/api/v1` 只作为短期只读回退快照。

@@ -28,7 +28,7 @@ function fetchWithTimeout(path, timeoutMs) {
 
 /**
  * 加载一个 JSON 资源；失败时在 75 秒窗口内重试，最终失败抛出异常。
- * @param {string} path 例如 /api/v1/introduction
+ * @param {string} path 例如 /api/site/introduction（#29 起正式领域语义路径）
  * @param {{ onPhase?: (phase: string) => void }} [options]
  * @returns {Promise<any>}
  */

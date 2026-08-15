@@ -31,7 +31,12 @@ export default {
         return
       }
       try {
-        intro.value = await sharedLoad('/api/v1/introduction')
+        // 正式领域语义 API（#29）：介绍与联系方式分开读取后合并供页脚使用
+        const [introduction, contact] = await Promise.all([
+          sharedLoad('/api/site/introduction'),
+          sharedLoad('/api/site/contact'),
+        ])
+        intro.value = { ...introduction, ...contact }
       } catch (e) {
         intro.value = null
       } finally {

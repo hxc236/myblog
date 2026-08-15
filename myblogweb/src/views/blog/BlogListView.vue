@@ -36,7 +36,8 @@ export default {
     async function loadPosts() {
       phase.value = 'loading'
       try {
-        posts.value = await loadJson('/api/v1/posts', { onPhase })
+        const page = await loadJson('/api/posts?pageSize=50', { onPhase })
+        posts.value = page.items || []
         phase.value = 'ready'
       } catch (e) {
         phase.value = 'error'

@@ -1,12 +1,11 @@
 <template>
   <article class="post-row">
-    <time class="post-date" :datetime="post.publishedAt">{{ post.publishedAt }}</time>
+    <time class="post-date" :datetime="post.publishedAt">{{ (post.publishedAt || '').slice(0, 10) }}</time>
     <div class="post-main">
       <h3 class="post-title">{{ post.title }}</h3>
       <p class="post-summary">{{ post.summary }}</p>
     </div>
     <div class="post-meta">
-      <span class="reading-time">{{ post.readingMinutes }} 分钟</span>
       <router-link class="read-link" :to="`/blog/${post.slug}`">阅读 →</router-link>
     </div>
   </article>

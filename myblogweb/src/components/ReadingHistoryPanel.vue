@@ -31,7 +31,7 @@ export default {
 
     onMounted(async () => {
       try {
-        entries.value = await pruneReadingHistory((slug) => loadJson(`/api/v1/posts/${slug}`))
+        entries.value = await pruneReadingHistory((slug) => loadJson(`/api/posts/${slug}`))
       } catch (e) {
         entries.value = loadReadingHistory()
       }

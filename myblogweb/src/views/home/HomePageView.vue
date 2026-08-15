@@ -29,7 +29,7 @@
       <h2 class="section-title">个人项目展示</h2>
 
       <div v-if="projects && projects.length" class="project-list">
-        <ProjectRow v-for="(project, i) in projects" :key="project.key" :project="project" :index="i" />
+        <ProjectRow v-for="(project, i) in projects" :key="project.id" :project="project" :index="i" />
       </div>
       <div v-else-if="phase !== 'error'" class="project-list" aria-hidden="true">
         <div v-for="i in 3" :key="i" class="skeleton project-skeleton"></div>
@@ -77,15 +77,15 @@ export default {
     async function loadAll() {
       phase.value = 'loading'
       const [introResult, projectsResult, postsResult] = await Promise.allSettled([
-        loadJson('/api/v1/introduction', { onPhase }),
-        loadJson('/api/v1/projects', { onPhase }),
-        loadJson('/api/v1/posts', { onPhase }),
+        loadJson('/api/site/introduction', { onPhase }),
+        loadJson('/api/projects', { onPhase }),
+        loadJson('/api/posts?pageSize=50', { onPhase }),
       ])
       if (introResult.status === 'fulfilled') intro.value = introResult.value
       if (projectsResult.status === 'fulfilled') projects.value = projectsResult.value
       if (postsResult.status === 'fulfilled') {
-        // 首页最多展示三篇近期博客
-        posts.value = postsResult.value.slice(0, 3)
+        // 正式 API 返回分页结构（#29）：首页最多展示三篇近期博客
+        posts.value = (postsResult.value.items || []).slice(0, 3)
       }
       // 任一资源在 75 秒窗口内失败 → 手动重试；全部成功 → 无需提示
       phase.value =

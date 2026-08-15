@@ -5,12 +5,12 @@
         <h1 class="post-title">{{ post.title }}</h1>
         <p class="post-summary">{{ post.summary }}</p>
         <p class="post-meta">
-          <time :datetime="post.publishedAt">{{ post.publishedAt }}</time>
+          <time :datetime="post.publishedAt">{{ formatDate(post.publishedAt) }}</time>
           <span aria-hidden="true">·</span>
-          <span>{{ post.readingMinutes }} 分钟阅读</span>
+          <span>发布于 {{ formatDate(post.publishedAt) }}</span>
         </p>
       </header>
-      <MarkdownView :markdown="post.body" />
+      <MarkdownView :markdown="post.bodyMarkdown" />
     </article>
 
     <div v-else-if="phase === 'not-found'" class="not-found">
@@ -54,7 +54,7 @@ export default {
     async function loadPost() {
       phase.value = 'loading'
       try {
-        post.value = await loadJson(`/api/v1/posts/${route.params.slug}`, { onPhase })
+        post.value = await loadJson(`/api/posts/${route.params.slug}`, { onPhase })
         recordReading(route.params.slug, post.value.title)
         reportPageView(route.params.slug)
         phase.value = 'ready'
@@ -66,7 +66,11 @@ export default {
 
     onMounted(loadPost)
 
-    return { post, phase, loadPost }
+    function formatDate(iso) {
+      return iso ? String(iso).slice(0, 10) : ''
+    }
+
+    return { post, phase, loadPost, formatDate }
   },
 }
 </script>
