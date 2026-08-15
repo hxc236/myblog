@@ -77,7 +77,6 @@ public class ContentLoader {
         Introduction intro = readJson("introduction.json", Introduction.class);
         require(intro != null, "introduction.json");
         requireText(intro.displayName, "introduction.displayName");
-        requireText(intro.eyebrow, "introduction.eyebrow");
         requireText(intro.headline, "introduction.headline");
         requireText(intro.introduction, "introduction.introduction");
         requireText(intro.email, "introduction.email");
@@ -85,11 +84,14 @@ public class ContentLoader {
         requireText(intro.copyright, "introduction.copyright");
         require(intro.skillGroups != null && !intro.skillGroups.isEmpty(), "introduction.skillGroups 不能为空");
 
-        String[] expected = {"后端", "前端", "交付"};
-        for (int i = 0; i < expected.length; i++) {
+        List<String> groupNames = new ArrayList<>();
+        for (int i = 0; i < intro.skillGroups.size(); i++) {
             SkillGroup group = intro.skillGroups.get(i);
-            require(group != null && expected[i].equals(group.name),
-                    "introduction.skillGroups[" + i + "].name 必须为「" + expected[i] + "」");
+            require(group != null, "introduction.skillGroups[" + i + "] 不能为空");
+            requireText(group.name, "introduction.skillGroups[" + i + "].name");
+            require(!groupNames.contains(group.name),
+                    "introduction.skillGroups.name 不能重复：「" + group.name + "」");
+            groupNames.add(group.name);
             require(group.skills != null && !group.skills.isEmpty(),
                     "introduction.skillGroups[" + i + "].skills 不能为空");
             for (String skill : group.skills) {

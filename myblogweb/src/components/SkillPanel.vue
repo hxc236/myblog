@@ -1,6 +1,6 @@
 <template>
   <aside class="skill-panel" aria-label="技能与技术栈">
-    <h3 class="panel-title">技能 / 技术栈</h3>
+    <h3 class="panel-title">能力 / 技术栈</h3>
     <div v-if="groups.length" class="groups">
       <div v-for="group in groups" :key="group.name" class="group">
         <h4 class="group-name">{{ group.name }}</h4>
@@ -36,12 +36,14 @@ export default {
   margin: 0 0 18px;
 }
 
-.group {
-  margin-bottom: 16px;
+.groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 18px;
 }
 
-.group:last-child {
-  margin-bottom: 0;
+.group:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 
 .group-name {
@@ -72,5 +74,15 @@ export default {
 
 .panel-skeleton {
   height: 220px;
+}
+
+@media (max-width: 900px) {
+  .groups {
+    grid-template-columns: 1fr;
+  }
+
+  .group:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
 }
 </style>

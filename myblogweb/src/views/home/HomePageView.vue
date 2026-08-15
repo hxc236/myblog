@@ -3,9 +3,6 @@
     <!-- 1. 公开介绍（Hero） -->
     <section id="intro" class="hero" aria-label="公开介绍">
       <div class="hero-copy">
-        <p v-if="intro" class="eyebrow">{{ intro.eyebrow }}</p>
-        <p v-else class="skeleton eyebrow-skeleton" aria-hidden="true"></p>
-
         <h1 v-if="intro" class="hero-title">{{ intro.headline }}</h1>
         <h1 v-else class="skeleton title-skeleton" aria-hidden="true">加载中</h1>
 
@@ -22,13 +19,6 @@
           <span v-else class="skeleton button-skeleton" aria-hidden="true"></span>
         </div>
 
-        <a
-          v-if="intro"
-          class="hero-github"
-          :href="intro.githubUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-        >在 GitHub 查看更多公开代码 →</a>
       </div>
 
       <SkillPanel :groups="intro ? intro.skillGroups : []" />
@@ -36,10 +26,7 @@
 
     <!-- 2. 作品展示 -->
     <section id="work" class="work" aria-label="精选作品">
-      <h2 class="section-title">不只展示代码，也讲清楚它解决了什么</h2>
-      <p v-if="projects && projects.length" class="section-note">
-        三个精选作品，按编号、成果、职责、技术栈与年份归档。
-      </p>
+      <h2 class="section-title">个人项目展示</h2>
 
       <div v-if="projects && projects.length" class="project-list">
         <ProjectRow v-for="(project, i) in projects" :key="project.key" :project="project" :index="i" />
@@ -130,14 +117,6 @@ export default {
   padding-bottom: 40px;
 }
 
-.eyebrow {
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: var(--forest);
-  margin: 0 0 16px;
-}
-
 .hero-title {
   font-size: clamp(54px, 6.4vw, 92px);
   margin: 0 0 20px;
@@ -157,20 +136,9 @@ export default {
   margin-bottom: 20px;
 }
 
-.hero-github {
-  display: inline-block;
-  font-size: 15px;
-  font-weight: 600;
-}
-
 /* ---- 作品 ---- */
 .work {
   padding-top: 40px;
-}
-
-.section-note {
-  color: var(--body-muted);
-  margin: 0 0 18px;
 }
 
 .project-list {
@@ -195,12 +163,6 @@ export default {
 }
 
 /* ---- 骨架 ---- */
-.eyebrow-skeleton {
-  width: 180px;
-  height: 18px;
-  margin-bottom: 16px;
-}
-
 .title-skeleton {
   width: 70%;
   height: 72px;

@@ -1,12 +1,13 @@
 {
   "displayName": "hxc236",
-  "eyebrow": "Java · Spring Boot · Vue",
   "headline": "构建可靠的全栈应用",
-  "introduction": "我是一名 Java 全栈开发者，专注于用 Spring Boot 构建后端服务、用 Vue 构建前端界面。我相信代码应该解决问题而不只是展示技术，正在把每一段真实经历沉淀为可公开验证的作品。",
+  "introduction": "AI时代，技术栈、语言已不是门槛。我是一名正在成长的全栈开发者，正在探索与 AI Agent 结合的应用开发路线，关注从需求分析、产品设计到工程交付的完整过程。",
   "skillGroups": [
-    { "name": "后端", "skills": ["Java", "Spring Boot", "MyBatis-Plus", "MySQL", "REST API"] },
-    { "name": "前端", "skills": ["Vue 3", "Vue Router", "JavaScript", "HTML", "CSS"] },
-    { "name": "交付", "skills": ["Git", "Maven", "Docker", "Render 部署"] }
+    { "name": "全栈与桌面", "skills": ["Java", "Spring Boot", "Vue 3", "TypeScript", "Electron"] },
+    { "name": "AI 应用", "skills": ["AI Agent", "Agent Loop", "Tool Calling", "Pi Agent RPC"] },
+    { "name": "数据与接口", "skills": ["REST API", "MyBatis-Plus", "MySQL", "SQLite"] },
+    { "name": "工程交付", "skills": ["Git / GitHub", "Maven", "Docker", "Render"] },
+    { "name": "软件工程", "skills": ["TDD", "DDD", "Issue-driven Development"] }
   ],
   "email": "houxc2249@gmail.com",
   "githubUrl": "https://github.com/hxc236",

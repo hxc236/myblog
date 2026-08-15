@@ -6,7 +6,6 @@ import java.util.List;
 public class Introduction {
 
     public String displayName;
-    public String eyebrow;
     public String headline;
     public String introduction;
     public List<SkillGroup> skillGroups;

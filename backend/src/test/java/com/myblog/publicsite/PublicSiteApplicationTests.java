@@ -59,7 +59,6 @@ class PublicSiteApplicationTests {
                                 org.hamcrest.Matchers.containsString("public"),
                                 org.hamcrest.Matchers.containsString("max-age=300"))))
                 .andExpect(jsonPath("$.displayName").isNotEmpty())
-                .andExpect(jsonPath("$.eyebrow").isNotEmpty())
                 .andExpect(jsonPath("$.headline").isNotEmpty())
                 .andExpect(jsonPath("$.introduction").isNotEmpty())
                 .andExpect(jsonPath("$.skillGroups").isArray())
@@ -78,13 +77,16 @@ class PublicSiteApplicationTests {
     }
 
     @Test
-    void skillGroupsAreOrderedBackendFrontendDelivery() throws Exception {
+    void skillGroupsExposeTheFiveHomepageCapabilityAreasInOrder() throws Exception {
         mockMvc.perform(get("/api/v1/introduction"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.skillGroups[0].name").value("后端"))
+                .andExpect(jsonPath("$.skillGroups.length()").value(5))
+                .andExpect(jsonPath("$.skillGroups[0].name").value("全栈与桌面"))
                 .andExpect(jsonPath("$.skillGroups[0].skills[0]").isNotEmpty())
-                .andExpect(jsonPath("$.skillGroups[1].name").value("前端"))
-                .andExpect(jsonPath("$.skillGroups[2].name").value("交付"));
+                .andExpect(jsonPath("$.skillGroups[1].name").value("AI 应用"))
+                .andExpect(jsonPath("$.skillGroups[2].name").value("数据与接口"))
+                .andExpect(jsonPath("$.skillGroups[3].name").value("工程交付"))
+                .andExpect(jsonPath("$.skillGroups[4].name").value("软件工程"));
     }
 
     // ---- 作品 ----

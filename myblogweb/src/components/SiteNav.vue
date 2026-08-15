@@ -7,7 +7,6 @@
         <a href="#intro" class="nav-link" @click.prevent="goToSection('intro')">介绍</a>
         <a href="#work" class="nav-link" @click.prevent="goToSection('work')">作品</a>
         <a href="#writing" class="nav-link" @click.prevent="goToBlog">博客</a>
-        <a href="#contact" class="nav-link" @click.prevent="goToSection('contact')">联系</a>
       </div>
 
       <div class="nav-actions">
