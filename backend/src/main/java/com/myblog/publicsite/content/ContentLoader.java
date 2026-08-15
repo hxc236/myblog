@@ -2,10 +2,8 @@ package com.myblog.publicsite.content;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,14 +18,12 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
- * 随仓库版本化的公开内容加载器（#5 4.x 内容契约）。
+ * MVP 内容快照加载器（#30 迁移工具，非运行时内容服务）。
  *
- * <p>启动时读取并严格校验 JSON 与 Markdown 内容：缺少必填字段、出现未
- * 知字段（如被禁止的个人资料字段）或引用缺失的正文资源都会抛出
- * {@link IllegalStateException}，使应用上下文无法加载——即“无效必填内容
- * 使测试与构建失败，不在运行时静默忽略”。
+ * <p>仅由一次性导入器 {@link MvpContentImporter} 按需构造，读取
+ * {@code legacy-mvp-snapshot/content} 只读迁移快照并严格校验；应用启动与
+ * 公开/管理 API 不再读取任何文件内容（PostgreSQL 是唯一运行时权威源）。
  */
-@Component
 public class ContentLoader {
 
     private static final Pattern SLUG_PATTERN = Pattern.compile("^[a-z0-9]+(-[a-z0-9]+)*$");
@@ -44,9 +40,7 @@ public class ContentLoader {
     private List<PostMeta> postMetaList;
     private Map<String, Post> postsBySlug;
 
-    public ContentLoader(
-            ResourceLoader resourceLoader,
-            @Value("${publicsite.content.location:classpath:publicsite/content}") String contentLocation) {
+    public ContentLoader(ResourceLoader resourceLoader, String contentLocation) {
         this.resourceLoader = resourceLoader;
         // createRelative 需要目录结尾带斜杠，否则会把最后一段当作文件名替换掉
         this.contentLocation = contentLocation.endsWith("/") ? contentLocation : contentLocation + "/";

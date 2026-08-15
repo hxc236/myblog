@@ -24,11 +24,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * #27 MVP 内容导入与双读比对：正式数据库读路径与旧文件输出在
- * Visitor 可观察语义上等价（真实 PostgreSQL + HTTP 接缝）。
+ * MVP 快照导入（#27 双读比对在文件路径存在时完成；#30 起文件路径退出）。
  *
- * <p>master 的公开内容文件与数据库种子同为五组能力（#14 注），导入器与
- * /api/v1 读取同一份真实文件，对照即真实等价验证。
+ * <p>本测试验证：一次性导入器从 {@code legacy-mvp-snapshot} 只读快照导入后，
+ * 正式领域 API 输出与规格/快照期望一致，且 /api/v1 与 /api/v2 均不存在——
+ * PostgreSQL 是唯一运行时内容权威源。
  */
 @Testcontainers
 @SpringBootTest(classes = PublicSiteApplication.class)
@@ -58,83 +58,42 @@ class MvpImportComparisonTest {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Test
-    void importRunsOnceAndComparisonProvesEquivalence() throws Exception {
+    void snapshotImportServesFormalApisAndFilePathsAreGone() throws Exception {
         String token = adminToken();
 
-        // 第一次导入：介绍/作品区/项目/联系方式由 Flyway 种子提供（空库迁移即
-        // 完整初始值），导入器负责现有 Blog Post 与搜索投影
+        // 导入器从只读快照导入（介绍/项目/联系方式由迁移种子提供，导入文章）
         mockMvc.perform(post("/api/admin/import/mvp").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.introductionImported").value(false))
-                .andExpect(jsonPath("$.projectsImported").value(0))
                 .andExpect(jsonPath("$.postsImported").value(1));
 
-        // 重复执行：已有数据的领域跳过（空库重复执行结果一致，不建立双向同步）
-        mockMvc.perform(post("/api/admin/import/mvp").header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.introductionImported").value(false))
-                .andExpect(jsonPath("$.projectsImported").value(0))
-                .andExpect(jsonPath("$.postsImported").value(0));
+        // Public Introduction：五组能力初始值（#14 注）
+        JsonNode intro = json(getJson("/api/site/introduction"));
+        assertThat(intro.get("displayName").asText()).isEqualTo("hxc236");
+        assertThat(intro.get("headline").asText()).isEqualTo("构建可靠的全栈应用");
+        assertThat(intro.get("skillGroups")).hasSize(5);
+        assertThat(intro.get("skillGroups").get(0).get("name").asText()).isEqualTo("全栈与桌面");
 
-        // ---- 双读比对：Public Introduction + 五组技能 ----
-        JsonNode oldIntro = json(getJson("/api/v1/introduction"));
-        JsonNode newIntro = json(getJson("/api/site/introduction"));
-        assertThat(newIntro.get("displayName").asText()).isEqualTo(oldIntro.get("displayName").asText());
-        assertThat(newIntro.get("headline").asText()).isEqualTo(oldIntro.get("headline").asText());
-        assertThat(newIntro.get("introduction").asText()).isEqualTo(oldIntro.get("introduction").asText());
-        assertThat(newIntro.get("skillGroups")).hasSize(5);
-        for (int g = 0; g < 5; g++) {
-            assertThat(newIntro.get("skillGroups").get(g).get("name").asText())
-                    .isEqualTo(oldIntro.get("skillGroups").get(g).get("name").asText());
-            assertThat(newIntro.get("skillGroups").get(g).get("skills"))
-                    .isEqualTo(oldIntro.get("skillGroups").get(g).get("skills"));
-        }
-        // 联系方式与作品区设置（#17 字段来自同一 introduction.json）
+        // 精选 Project 与联系方式 / 作品区设置
+        JsonNode projects = json(getJson("/api/projects"));
+        assertThat(projects).hasSize(3);
+        assertThat(projects.get(0).get("featuredOrder").asInt()).isEqualTo(1);
         JsonNode contact = json(getJson("/api/site/contact"));
-        assertThat(contact.get("email").asText()).isEqualTo(oldIntro.get("email").asText());
-        assertThat(contact.get("githubUrl").asText()).isEqualTo(oldIntro.get("githubUrl").asText());
-        assertThat(contact.get("copyright").asText()).isEqualTo(oldIntro.get("copyright").asText());
-        JsonNode workSection = json(getJson("/api/site/work-section"));
-        assertThat(workSection.get("title").asText()).isEqualTo("个人项目展示");
+        assertThat(contact.get("email").asText()).isEqualTo("houxc2249@gmail.com");
 
-        // ---- 双读比对：最多三个精选 Project（顺序/字段）----
-        JsonNode oldProjects = json(getJson("/api/v1/projects"));
-        JsonNode newProjects = json(getJson("/api/projects"));
-        assertThat(oldProjects).hasSize(3);
-        assertThat(newProjects).hasSize(3);
-        for (int i = 0; i < 3; i++) {
-            JsonNode oldProject = oldProjects.get(i);
-            JsonNode newProject = newProjects.get(i);
-            assertThat(newProject.get("title").asText()).isEqualTo(oldProject.get("title").asText());
-            assertThat(newProject.get("summary").asText()).isEqualTo(oldProject.get("summary").asText());
-            assertThat(newProject.get("role").asText()).isEqualTo(oldProject.get("role").asText());
-            assertThat(newProject.get("year").asText()).isEqualTo(oldProject.get("year").asText());
-            assertThat(newProject.get("stack")).isEqualTo(oldProject.get("stack"));
-            assertThat(newProject.get("featuredOrder").asInt())
-                    .isEqualTo(oldProject.get("featuredOrder").asInt());
-        }
+        // Blog Post：slug / 标题 / 摘要 / 正文 / 发布时间
+        JsonNode detail = json(getJson("/api/posts/mvp-launch-notes"));
+        assertThat(detail.get("title").asText()).isEqualTo("一天上线个人主页 MVP：架构与取舍");
+        assertThat(detail.get("bodyMarkdown").asText()).contains("## ");
+        JsonNode list = json(getJson("/api/posts"));
+        assertThat(list.get("total").asInt()).isEqualTo(1);
+        assertThat(list.get("items").get(0).get("slug").asText()).isEqualTo("mvp-launch-notes");
+        // 搜索投影可读
+        JsonNode search = json(getJson("/api/posts?q=" + encode("MVP")));
+        assertThat(search.get("total").asInt()).isEqualTo(1);
 
-        // ---- 双读比对：Blog Post 内容 / slug / 发布时间 ----
-        JsonNode oldPosts = json(getJson("/api/v1/posts"));
-        assertThat(oldPosts).hasSize(1);
-        String slug = oldPosts.get(0).get("slug").asText();
-        JsonNode oldDetail = json(getJson("/api/v1/posts/" + slug));
-        JsonNode newDetail = json(getJson("/api/posts/" + slug));
-        assertThat(newDetail.get("slug").asText()).isEqualTo(slug);
-        assertThat(newDetail.get("title").asText()).isEqualTo(oldDetail.get("title").asText());
-        assertThat(newDetail.get("summary").asText()).isEqualTo(oldDetail.get("summary").asText());
-        assertThat(newDetail.get("bodyMarkdown").asText())
-                .isEqualTo(oldDetail.get("body").asText());
-        // 发布时间等价：MVP 是日期（当天 00:00 UTC），正式 API 输出 ISO 时间
-        String oldDate = oldDetail.get("publishedAt").asText().substring(0, 10);
-        assertThat(newDetail.get("publishedAt").asText()).startsWith(oldDate);
-        // 列表可见且按发布时间倒序
-        JsonNode newList = json(getJson("/api/posts"));
-        assertThat(newList.get("total").asInt()).isEqualTo(1);
-        assertThat(newList.get("items").get(0).get("slug").asText()).isEqualTo(slug);
-
-        // ---- /api/v1 不固化为新契约；/api/v2 不存在 ----
-        mockMvc.perform(get("/api/v2/introduction")).andExpect(status().isNotFound());
+        // 文件读路径与版本路径均不存在：PostgreSQL 是唯一运行时权威源
+        mockMvc.perform(get("/api/v1/introduction")).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/posts/mvp-launch-notes")).andExpect(status().isNotFound());
         mockMvc.perform(get("/api/v2/posts")).andExpect(status().isNotFound());
     }
 
@@ -145,8 +104,11 @@ class MvpImportComparisonTest {
 
     // ---- 辅助 ----
 
+    private String encode(String value) throws Exception {
+        return java.net.URLEncoder.encode(value, "UTF-8");
+    }
+
     private JsonNode json(MvcResult result) throws Exception {
-        // 响应体按 UTF-8 解码（避免 MockMvc 默认 ISO-8859-1 中文乱码）
         return MAPPER.readTree(new String(
                 result.getResponse().getContentAsByteArray(),
                 java.nio.charset.StandardCharsets.UTF_8));

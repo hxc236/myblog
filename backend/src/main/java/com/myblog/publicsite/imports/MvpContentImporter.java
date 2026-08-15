@@ -6,6 +6,8 @@ import com.myblog.publicsite.content.PostMeta;
 import com.myblog.publicsite.content.Project;
 import com.myblog.publicsite.content.SkillGroup;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,23 +18,31 @@ import java.time.ZoneOffset;
 import java.util.List;
 
 /**
- * MVP 内容一次性导入器（#27）。
+ * MVP 内容一次性导入器（#27/#30 迁移工具，非运行时内容服务）。
  *
- * <p>把随仓库发布的 JSON 与 Markdown（经 {@link ContentLoader} 同一套严格
- * 校验读取）写入 PostgreSQL：Public Introduction（五组技能）、作品区设置、
- * 联系方式、Project（含精选顺序）与 Blog Post（初始 Published Revision、
- * slug、发布时间；导入文章归入内置 Uncategorized，无 Tag）。不建立文件与
- * 数据库的双向同步；每个领域在已有数据时跳过（空库重复执行结果一致）。
+ * <p>按需读取 {@code legacy-mvp-snapshot/content} 只读迁移快照（经
+ * {@link ContentLoader} 严格校验）写入 PostgreSQL：Public Introduction
+ * （五组技能）、作品区设置、联系方式、Project（含精选顺序）与 Blog Post
+ * （初始 Published Revision、slug、发布时间；导入文章归入内置
+ * Uncategorized）。不建立文件与数据库的双向同步；每个领域在已有数据时
+ * 跳过。应用启动与公开/管理 API 不读取任何文件。
  */
 @Service
 public class MvpContentImporter {
 
     private final ObjectProvider<JdbcTemplate> jdbcTemplate;
-    private final ContentLoader contentLoader;
+    private final String snapshotLocation;
 
-    public MvpContentImporter(ObjectProvider<JdbcTemplate> jdbcTemplate, ContentLoader contentLoader) {
+    public MvpContentImporter(
+            ObjectProvider<JdbcTemplate> jdbcTemplate,
+            @Value("${mvp-import.content-location:classpath:legacy-mvp-snapshot/content}") String snapshotLocation) {
         this.jdbcTemplate = jdbcTemplate;
-        this.contentLoader = contentLoader;
+        this.snapshotLocation = snapshotLocation;
+    }
+
+    /** 按需构造快照加载器（仅导入时读取文件）。 */
+    private ContentLoader snapshotLoader() {
+        return new ContentLoader(new DefaultResourceLoader(), snapshotLocation);
     }
 
     public boolean isAvailable() {
@@ -57,16 +67,17 @@ public class MvpContentImporter {
     public ImportSummary importAll() {
         ImportSummary summary = new ImportSummary();
         JdbcTemplate jdbc = requireJdbc();
-        summary.introductionImported = importIntroduction(jdbc);
-        summary.projectsImported = importProjects(jdbc);
-        summary.postsImported = importPosts(jdbc);
+        ContentLoader contentLoader = snapshotLoader();
+        summary.introductionImported = importIntroduction(jdbc, contentLoader);
+        summary.projectsImported = importProjects(jdbc, contentLoader);
+        summary.postsImported = importPosts(jdbc, contentLoader);
         if (summary.projectsImported + summary.postsImported > 0) {
             rebuildSearchIndex(jdbc);
         }
         return summary;
     }
 
-    private boolean importIntroduction(JdbcTemplate jdbc) {
+    private boolean importIntroduction(JdbcTemplate jdbc, ContentLoader contentLoader) {
         Integer hasContent = jdbc.query(
                 "SELECT 1 FROM public_introduction LIMIT 1",
                 rs -> rs.next() ? 1 : null);
@@ -101,7 +112,7 @@ public class MvpContentImporter {
         return true;
     }
 
-    private int importProjects(JdbcTemplate jdbc) {
+    private int importProjects(JdbcTemplate jdbc, ContentLoader contentLoader) {
         Integer hasContent = jdbc.query(
                 "SELECT 1 FROM projects LIMIT 1",
                 rs -> rs.next() ? 1 : null);
@@ -128,7 +139,7 @@ public class MvpContentImporter {
         return count;
     }
 
-    private int importPosts(JdbcTemplate jdbc) {
+    private int importPosts(JdbcTemplate jdbc, ContentLoader contentLoader) {
         Integer hasContent = jdbc.query(
                 "SELECT 1 FROM posts LIMIT 1",
                 rs -> rs.next() ? 1 : null);

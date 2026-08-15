@@ -28,8 +28,8 @@ site:
     # GitHub OAuth 凭据（#16）直接读环境变量 GITHUB_OAUTH_CLIENT_ID /
     # GITHUB_OAUTH_CLIENT_SECRET；未配置时 Admin 登录入口不可用，其余功能不受影响。
 
-# 数据库读路径（#15）：配置 spring.datasource.url（或 DATABASE_URL，支持
+# 数据库读路径（#15/#30）：配置 spring.datasource.url（或 DATABASE_URL，支持
 # postgres://、postgresql:// 与 jdbc:postgresql:// 形式，由
 # DatabaseUrlEnvironmentPostProcessor 转换）后，Flyway 在空 PostgreSQL 上
-# 建立结构并写入初始值，Public Introduction 的权威源切到数据库；未配置时
-# 公开站点按 MVP 文件读路径回退启动，正式 /api/site/* 返回 503。
+# 建立结构并写入初始值；PostgreSQL 是唯一运行时内容权威源（MVP 文件读路径
+# 已退出）。未配置数据库时公开 API 返回 503、管理端 fail closed。

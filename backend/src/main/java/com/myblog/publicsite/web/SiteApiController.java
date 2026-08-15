@@ -36,6 +36,13 @@ public class SiteApiController {
         this.settingsService = settingsService;
     }
 
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, String>> health() {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(Map.of("status", "ok"));
+    }
+
     @GetMapping("/introduction")
     public ResponseEntity<?> introduction() {
         if (!introductionService.isAvailable()) {

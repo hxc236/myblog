@@ -13,7 +13,7 @@ services:
     dockerfilePath: Dockerfile
     plan: free
     region: singapore
-    healthCheckPath: /api/v1/health
+    healthCheckPath: /api/site/health
     envVars:
       # 生产 CORS 只接受准确前端来源（来自前端静态站的实际主机）
       - key: SITE_ORIGIN

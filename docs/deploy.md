@@ -140,7 +140,7 @@ GitHub OAuth 回调地址必须与 Render 实际域名一致：
 2. 执行备份恢复演练（`docs/backup.md`）并保留 PASS 输出。
 3. 可选：以管理 API 执行一次 MVP 导入（`POST /api/admin/import/mvp`）。
 4. 部署新后端 → 部署新前端（Render Blueprint 同一提交）。
-5. 验收：`/api/v1/health`、`/api/site/introduction`、`/api/posts`、
+5. 验收：`/api/site/health`、`/api/site/introduction`、`/api/posts`、
    RSS/Sitemap；Admin Console 登录 → 发布一篇草稿 → Visitor 可见。
 
 ### 7.3 回退（失败时，不引入并行 URL 版本）
@@ -151,5 +151,7 @@ GitHub OAuth 回调地址必须与 Render 实际域名一致：
 4. 回退后旧 JSON、Markdown 与 `/api/v1` 仍是只读回退快照；修复问题后在
    新的同一提交上重新执行 7.2。
 
-> 规则（#14）：回退通过恢复旧前端与旧后端部署完成，**不得**以长期并存的
-> URL 版本（如 `/api/v2`）实现；`/api/v1` 只作为短期只读回退快照。
+> 规则（#14/#30）：回退通过恢复旧前端与旧后端部署完成，**不得**以长期并存的
+> URL 版本（如 `/api/v2`）实现。稳定期后（#30）运行时文件读路径与 `/api/v1`
+> 已移除：旧 JSON 与 Markdown 仅作为 `backend/src/main/resources/legacy-mvp-snapshot/`
+> 只读迁移快照，只由一次性导入器按需读取，不再参与运行时内容服务。
