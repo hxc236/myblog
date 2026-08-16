@@ -35,13 +35,6 @@
             <version>9.22.3</version>
         </dependency>
 
-        <!-- mybatis依赖 -->
-        <dependency>
-            <groupId>org.mybatis</groupId>
-            <artifactId>mybatis</artifactId>
-            <version>3.5.10</version>
-        </dependency>
-
         <!-- Springboot启动器依赖 -->
         <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-jdbc -->
         <dependency>
@@ -49,67 +42,10 @@
             <artifactId>spring-boot-starter-jdbc</artifactId>
         </dependency>
 
-
-        <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.26</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- mysql-connector-j依赖，MySQL官方提供 -->
-        <!-- https://mvnrepository.com/artifact/com.mysql/mysql-connector-j -->
-        <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-            <version>8.0.32</version>
-        </dependency>
-
-        <!-- mybatisplus依赖 -->
-        <!-- https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-boot-starter -->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
-            <version>3.5.3.1</version>
-        </dependency>
-
-        <!-- 基于mybatisplus生成类的依赖 -->
-        <!-- https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-generator -->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-generator</artifactId>
-            <version>3.5.3.1</version>
-        </dependency>
-
         <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-
-        <!-- Java JWT (JSON Web Token) 库的组成部分 jjwt-api、jjwt-impl、jjwt-jackson -->
-        <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api -->
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-            <version>0.11.5</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-impl -->
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <version>0.11.5</version>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-jackson -->
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <version>0.11.5</version>
-            <scope>runtime</scope>
         </dependency>
 
         <dependency>
@@ -180,27 +116,16 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <!-- 插件级 mainClass：mvn spring-boot:run 无需 -D 参数即可启动公开站点应用，
+                <!-- 插件级 mainClass：mvn spring-boot:run 无需 -D 参数即可启动生产应用，
                      同时兼容 PowerShell 7.3+ 对含 = 的原生命令参数拆分问题 -->
                 <configuration>
-                    <mainClass>com.myblog.publicsite.PublicSiteApplication</mainClass>
+                    <mainClass>com.myblog.backend.BackendApplication</mainClass>
                 </configuration>
                 <executions>
-                    <!-- 默认制品：隔离公开站点应用（生产可执行入口） -->
+                    <!-- 默认制品：生产可执行入口（#31 统一包根） -->
                     <execution>
                         <id>repackage</id>
                         <configuration>
-                            <mainClass>com.myblog.publicsite.PublicSiteApplication</mainClass>
-                        </configuration>
-                    </execution>
-                    <!-- 旧应用单独保留为 legacy 分类制品，不参与生产运行 -->
-                    <execution>
-                        <id>repackage-legacy</id>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                        <configuration>
-                            <classifier>legacy</classifier>
                             <mainClass>com.myblog.backend.BackendApplication</mainClass>
                         </configuration>
                     </execution>
