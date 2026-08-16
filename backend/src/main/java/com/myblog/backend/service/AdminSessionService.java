@@ -1,8 +1,8 @@
 package com.myblog.backend.service;
 
+import com.myblog.backend.pojo.TokenResult;
 import com.myblog.backend.utils.TokenUtil;
 
-import java.time.OffsetDateTime;
 
 /**
  * Site Owner 会话服务契约（#16）：一次性交换码与不透明会话令牌。
@@ -36,19 +36,4 @@ public interface AdminSessionService {
     /** 撤销会话令牌（登出）；未找到令牌时静默成功（结果始终是“不再有效”）。 */
     void revoke(String rawToken);
 
-    /** 交换结果：原始会话令牌只在响应体中返回一次。 */
-    class TokenResult {
-
-        public final String token;
-        public final String login;
-        public final long expiresInSeconds;
-        public final OffsetDateTime expiresAt;
-
-        public TokenResult(String token, String login, long expiresInSeconds, OffsetDateTime expiresAt) {
-            this.token = token;
-            this.login = login;
-            this.expiresInSeconds = expiresInSeconds;
-            this.expiresAt = expiresAt;
-        }
-    }
 }

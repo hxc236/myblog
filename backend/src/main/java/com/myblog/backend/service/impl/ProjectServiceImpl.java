@@ -1,191 +1,98 @@
 package com.myblog.backend.service.impl;
-import com.myblog.backend.service.ProjectService;
-import com.myblog.backend.pojo.ProjectItem;
 
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.jdbc.core.JdbcTemplate;
+import com.myblog.backend.mapper.ProjectMapper;
+import com.myblog.backend.pojo.ProjectItem;
+import com.myblog.backend.service.ProjectService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Project 服务（#18）：内容库 CRUD、排序与首页精选。
+ * Project 服务实现（#18）：内容库 CRUD、排序与首页精选。
  *
  * <p>所有写操作在单一事务内完成；精选顺序在精选范围内唯一（数据库部分
- * 唯一索引为最终保证），首页精选数量恒为 0–3。
+ * 唯一索引为最终保证），首页精选数量恒为 0–3。数据访问见
+ * {@link ProjectMapper}。
  */
 @Service
 public class ProjectServiceImpl implements ProjectService {
 
-    private static final String PROJECT_COLUMNS =
-            "SELECT id, title, summary, role, year, repository_url, demo_url,"
-                    + " display_order, featured_order FROM projects";
+    private final ProjectMapper mapper;
 
-    private final ObjectProvider<JdbcTemplate> jdbcTemplate;
-
-    public ProjectServiceImpl(ObjectProvider<JdbcTemplate> jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public ProjectServiceImpl(ProjectMapper mapper) {
+        this.mapper = mapper;
     }
 
     public boolean isAvailable() {
-        return jdbcTemplate.getIfAvailable() != null;
+        return mapper.isAvailable();
     }
 
     /** 全部 Project（管理端），按 (display_order, id) 排序。 */
     public List<ProjectItem> listProjects() {
-        return queryProjects(" ORDER BY display_order, id");
+        return mapper.listProjects();
     }
 
     /** 首页精选 Project（Visitor），按 featured_order 排序；无精选时为空列表。 */
     public List<ProjectItem> listFeatured() {
-        return queryProjects(" WHERE featured_order IS NOT NULL ORDER BY featured_order");
+        return mapper.listFeatured();
     }
 
     @Transactional
     public ProjectItem createProject(ProjectItem project) {
-        JdbcTemplate jdbc = requireJdbc();
         Integer displayOrder = project.displayOrder;
         if (displayOrder == null) {
-            Integer max = jdbc.queryForObject(
-                    "SELECT COALESCE(MAX(display_order), -1) FROM projects", Integer.class);
-            displayOrder = max + 1;
+            displayOrder = mapper.maxDisplayOrder() + 1;
         }
         project.displayOrder = displayOrder;
         validate(project);
-        Long id = jdbc.queryForObject(
-                "INSERT INTO projects (title, summary, role, year, repository_url, demo_url,"
-                        + " display_order, featured_order)"
-                        + " VALUES (?, ?, ?, ?, NULLIF(?, ''), NULLIF(?, ''), ?, ?)"
-                        + " RETURNING id",
-                Long.class,
+        Long id = mapper.insertProject(
                 trim(project.title), trim(project.summary), trim(project.role), trim(project.year),
                 project.repositoryUrl, project.demoUrl, displayOrder, project.featuredOrder);
-        replaceStack(jdbc, id, project.stack);
+        mapper.replaceStack(id, trimAll(project.stack));
         project.id = id;
         return project;
     }
 
     @Transactional
     public ProjectItem updateProject(long id, ProjectItem project) {
-        JdbcTemplate jdbc = requireJdbc();
-        ProjectItem current = findProject(jdbc, id);
+        ProjectItem current = mapper.findProject(id);
         if (current == null) {
             return null;
         }
         validate(project);
-        reorderDisplay(jdbc, current.displayOrder, project.displayOrder);
+        reorderDisplay(current.displayOrder, project.displayOrder);
         if (project.featuredOrder != null) {
             // 精选槽位替换：同一槽位上的旧精选让位（事务内两步，保证 ≤3 且唯一）
-            jdbc.update(
-                    "UPDATE projects SET featured_order = NULL"
-                            + " WHERE featured_order = ? AND id <> ?",
-                    project.featuredOrder, id);
+            mapper.clearFeaturedSlot(project.featuredOrder, id);
         }
-        jdbc.update(
-                "UPDATE projects SET title = ?, summary = ?, role = ?, year = ?,"
-                        + " repository_url = NULLIF(?, ''), demo_url = NULLIF(?, ''),"
-                        + " display_order = ?, featured_order = ?, updated_at = now()"
-                        + " WHERE id = ?",
+        mapper.updateProject(
+                id,
                 trim(project.title), trim(project.summary), trim(project.role), trim(project.year),
                 project.repositoryUrl, project.demoUrl,
-                project.displayOrder, project.featuredOrder, id);
-        replaceStack(jdbc, id, project.stack);
+                project.displayOrder, project.featuredOrder);
+        mapper.replaceStack(id, trimAll(project.stack));
         project.id = id;
         return project;
     }
 
     @Transactional
     public boolean deleteProject(long id) {
-        JdbcTemplate jdbc = requireJdbc();
-        return jdbc.update("DELETE FROM projects WHERE id = ?", id) > 0;
+        return mapper.deleteProject(id);
     }
 
     // ---- 内部 ----
 
-    private List<ProjectItem> queryProjects(String tail) {
-        JdbcTemplate jdbc = requireJdbc();
-        Map<Long, ProjectItem> byId = new HashMap<>();
-        List<ProjectItem> order = new ArrayList<>();
-        jdbc.query(PROJECT_COLUMNS + tail, (org.springframework.jdbc.core.RowCallbackHandler) rs -> {
-            ProjectItem p = new ProjectItem();
-            p.id = rs.getLong("id");
-            p.title = rs.getString("title");
-            p.summary = rs.getString("summary");
-            p.role = rs.getString("role");
-            p.year = rs.getString("year");
-            p.repositoryUrl = rs.getString("repository_url");
-            p.demoUrl = rs.getString("demo_url");
-            int displayOrder = rs.getInt("display_order");
-            p.displayOrder = displayOrder;
-            int featured = rs.getInt("featured_order");
-            p.featuredOrder = rs.wasNull() ? null : featured;
-            p.stack = new ArrayList<>();
-            byId.put(p.id, p);
-            order.add(p);
-        });
-        if (!byId.isEmpty()) {
-            String placeholders = String.join(",", Collections.nCopies(byId.size(), "?"));
-            jdbc.query(
-                    "SELECT project_id, name FROM project_stack_items"
-                            + " WHERE project_id IN (" + placeholders + ")"
-                            + " ORDER BY project_id, position, id",
-                    (org.springframework.jdbc.core.RowCallbackHandler) rs ->
-                            byId.get(rs.getLong("project_id")).stack.add(rs.getString("name")),
-                    byId.keySet().toArray());
-        }
-        return order;
-    }
-
-    private ProjectItem findProject(JdbcTemplate jdbc, long id) {
-        return jdbc.query(
-                PROJECT_COLUMNS + " WHERE id = ?",
-                rs -> rs.next() ? readRow(rs) : null, id);
-    }
-
-    private ProjectItem readRow(java.sql.ResultSet rs) throws java.sql.SQLException {
-        ProjectItem p = new ProjectItem();
-        p.id = rs.getLong("id");
-        p.title = rs.getString("title");
-        p.summary = rs.getString("summary");
-        p.role = rs.getString("role");
-        p.year = rs.getString("year");
-        p.repositoryUrl = rs.getString("repository_url");
-        p.demoUrl = rs.getString("demo_url");
-        p.displayOrder = rs.getInt("display_order");
-        int featured = rs.getInt("featured_order");
-        p.featuredOrder = rs.wasNull() ? null : featured;
-        return p;
-    }
-
     /** 列表重排：把项目从旧位置移到新位置，其余项目在事务内平移。 */
-    private void reorderDisplay(JdbcTemplate jdbc, int oldOrder, int newOrder) {
+    private void reorderDisplay(int oldOrder, int newOrder) {
         if (oldOrder == newOrder) {
             return;
         }
         if (newOrder > oldOrder) {
-            jdbc.update(
-                    "UPDATE projects SET display_order = display_order - 1"
-                            + " WHERE display_order > ? AND display_order <= ?",
-                    oldOrder, newOrder);
+            mapper.shiftDisplayOrderDown(oldOrder, newOrder);
         } else {
-            jdbc.update(
-                    "UPDATE projects SET display_order = display_order + 1"
-                            + " WHERE display_order >= ? AND display_order < ?",
-                    newOrder, oldOrder);
-        }
-    }
-
-    private void replaceStack(JdbcTemplate jdbc, long projectId, List<String> stack) {
-        jdbc.update("DELETE FROM project_stack_items WHERE project_id = ?", projectId);
-        for (int i = 0; i < stack.size(); i++) {
-            jdbc.update(
-                    "INSERT INTO project_stack_items (project_id, name, position) VALUES (?, ?, ?)",
-                    projectId, trim(stack.get(i)), i);
+            mapper.shiftDisplayOrderUp(newOrder, oldOrder);
         }
     }
 
@@ -238,11 +145,11 @@ public class ProjectServiceImpl implements ProjectService {
         return value == null ? "" : value.trim();
     }
 
-    private JdbcTemplate requireJdbc() {
-        JdbcTemplate jdbc = jdbcTemplate.getIfAvailable();
-        if (jdbc == null) {
-            throw new IllegalStateException("数据库未配置：Project 服务不可用");
+    private static List<String> trimAll(List<String> stack) {
+        List<String> trimmed = new ArrayList<>(stack.size());
+        for (String s : stack) {
+            trimmed.add(trim(s));
         }
-        return jdbc;
+        return trimmed;
     }
 }

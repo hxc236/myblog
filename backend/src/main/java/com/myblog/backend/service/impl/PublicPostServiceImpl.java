@@ -1,7 +1,7 @@
 package com.myblog.backend.service.impl;
 import com.myblog.backend.service.PublicPostService;
-import com.myblog.backend.service.PublicPostService.ResolvedSlug;
-import com.myblog.backend.service.PublicPostService.PublicPage;
+import com.myblog.backend.pojo.PublicPage;
+import com.myblog.backend.pojo.ResolvedSlug;
 import com.myblog.backend.pojo.PublicPostDetail;
 import com.myblog.backend.pojo.PublicPostSummary;
 

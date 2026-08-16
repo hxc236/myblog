@@ -1,5 +1,6 @@
 package com.myblog.backend.controller;
 
+import com.myblog.backend.pojo.TokenResult;
 import com.myblog.backend.service.AdminSessionService;
 import com.myblog.backend.service.InvalidExchangeCodeException;
 import org.springframework.http.CacheControl;
@@ -54,7 +55,7 @@ public class AdminAuthController {
         }
         String code = body == null ? null : body.get("code");
         try {
-            AdminSessionService.TokenResult result = sessionService.exchange(code);
+            TokenResult result = sessionService.exchange(code);
             return ResponseEntity.ok().cacheControl(NO_STORE)
                     .body(Map.of(
                             "token", result.token,

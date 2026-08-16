@@ -2,6 +2,8 @@ package com.myblog.backend.service;
 
 import com.myblog.backend.pojo.AdminPostDetail;
 import com.myblog.backend.pojo.AdminPostSummary;
+import com.myblog.backend.pojo.DraftPayload;
+import com.myblog.backend.pojo.RevisionItem;
 
 import java.util.List;
 
@@ -53,25 +55,4 @@ public interface PostService {
     /** 从 Published Revision 全量重建搜索投影（#23）：投影不是第二权威源。 */
     int rebuildSearchIndex();
 
-    /** 草稿保存载荷（#20 编辑表单）。 */
-    class DraftPayload {
-
-        public String title;
-        public String summary;
-        public String bodyMarkdown;
-        public String slug;
-        public Long categoryId;
-        public List<Long> tagIds;
-    }
-
-    /** 修订历史条目。 */
-    class RevisionItem {
-
-        public Long revisionId;
-        public Integer revisionNo;
-        public String title;
-        public String summary;
-        public String createdAt;
-        public Boolean published;
-    }
 }

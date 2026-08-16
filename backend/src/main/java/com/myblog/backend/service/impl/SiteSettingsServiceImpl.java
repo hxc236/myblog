@@ -1,12 +1,12 @@
 package com.myblog.backend.service.impl;
-import com.myblog.backend.service.SiteIntroductionService;
-import com.myblog.backend.service.SiteSettingsService;
 
-import com.myblog.backend.pojo.SkillGroup;
+import com.myblog.backend.mapper.SiteIntroductionMapper;
+import com.myblog.backend.mapper.SiteSettingsMapper;
 import com.myblog.backend.pojo.SiteIntroduction;
 import com.myblog.backend.pojo.SiteSettings;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.jdbc.core.JdbcTemplate;
+import com.myblog.backend.pojo.SkillGroup;
+import com.myblog.backend.service.SiteIntroductionService;
+import com.myblog.backend.service.SiteSettingsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,33 +16,36 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 站点设置服务（#17）：读取与“保存并发布”。
+ * 站点设置服务实现（#17）：读取与“保存并发布”。
  *
  * <p>保存在同一事务中原子更新 Public Introduction、技能分组、作品区设置与
  * 联系方式；任何一步失败都会整体回滚，Visitor 始终看到最近一次完整发布的
  * 内容。管理端只能提交本服务固定接受的字段（隐私字段边界由 DTO 形状 +
- * 全局 strict JSON 反序列化共同保证）。
+ * 全局 strict JSON 反序列化共同保证）。数据访问见 {@link SiteSettingsMapper}
+ * 与 {@link SiteIntroductionMapper}。
  */
 @Service
 public class SiteSettingsServiceImpl implements SiteSettingsService {
 
-    private final ObjectProvider<JdbcTemplate> jdbcTemplate;
+    private final SiteSettingsMapper settingsMapper;
+    private final SiteIntroductionMapper introductionMapper;
     private final SiteIntroductionService introductionService;
 
     public SiteSettingsServiceImpl(
-            ObjectProvider<JdbcTemplate> jdbcTemplate,
+            SiteSettingsMapper settingsMapper,
+            SiteIntroductionMapper introductionMapper,
             SiteIntroductionService introductionService) {
-        this.jdbcTemplate = jdbcTemplate;
+        this.settingsMapper = settingsMapper;
+        this.introductionMapper = introductionMapper;
         this.introductionService = introductionService;
     }
 
     public boolean isAvailable() {
-        return jdbcTemplate.getIfAvailable() != null;
+        return settingsMapper.isAvailable();
     }
 
     /** 读取当前站点设置（编辑表单初始值）。 */
     public SiteSettings getSettings() {
-        JdbcTemplate jdbc = requireJdbc();
         SiteSettings settings = new SiteSettings();
 
         SiteIntroduction current = introductionService.getIntroduction();
@@ -59,23 +62,8 @@ public class SiteSettingsServiceImpl implements SiteSettingsService {
         }
         settings.introduction = introduction;
 
-        settings.workSection = jdbc.queryForObject(
-                "SELECT title, subtitle FROM project_section_settings WHERE id = 1",
-                (rs, rowNum) -> {
-                    SiteSettings.WorkSectionSettings work = new SiteSettings.WorkSectionSettings();
-                    work.title = rs.getString("title");
-                    work.subtitle = rs.getString("subtitle");
-                    return work;
-                });
-        settings.contact = jdbc.queryForObject(
-                "SELECT email, github_url, copyright FROM contact_settings WHERE id = 1",
-                (rs, rowNum) -> {
-                    SiteSettings.ContactSettings contact = new SiteSettings.ContactSettings();
-                    contact.email = rs.getString("email");
-                    contact.githubUrl = rs.getString("github_url");
-                    contact.copyright = rs.getString("copyright");
-                    return contact;
-                });
+        settings.workSection = settingsMapper.getWorkSection();
+        settings.contact = settingsMapper.getContact();
         return settings;
     }
 
@@ -87,38 +75,26 @@ public class SiteSettingsServiceImpl implements SiteSettingsService {
     @Transactional
     public void saveSettings(SiteSettings settings) {
         validate(settings);
-        JdbcTemplate jdbc = requireJdbc();
 
-        jdbc.update(
-                "UPDATE public_introduction"
-                        + "   SET display_name = ?, headline = ?, introduction = ?, updated_at = now()"
-                        + " WHERE id = 1",
+        introductionMapper.updateIntroduction(
                 trim(settings.introduction.displayName),
                 trim(settings.introduction.headline),
                 settings.introduction.introduction.trim());
 
-        jdbc.update("DELETE FROM skill_group_items");
-        jdbc.update("DELETE FROM skill_groups");
+        introductionMapper.deleteAllSkillGroups();
         for (int g = 0; g < settings.introduction.skillGroups.size(); g++) {
             SiteSettings.SkillGroupInput group = settings.introduction.skillGroups.get(g);
-            jdbc.update(
-                    "INSERT INTO skill_groups (name, position) VALUES (?, ?)",
-                    trim(group.name), g);
+            introductionMapper.insertSkillGroup(trim(group.name), g);
             for (int s = 0; s < group.skills.size(); s++) {
-                jdbc.update(
-                        "INSERT INTO skill_group_items (group_id, name, position)"
-                                + " SELECT id, ?, ? FROM skill_groups WHERE position = ?",
+                introductionMapper.insertSkillGroupItemByGroupPosition(
                         trim(group.skills.get(s)), s, g);
             }
         }
 
-        jdbc.update(
-                "UPDATE project_section_settings SET title = ?, subtitle = ?, updated_at = now()"
-                        + " WHERE id = 1",
-                trim(settings.workSection.title), settings.workSection.subtitle == null ? "" : settings.workSection.subtitle.trim());
-        jdbc.update(
-                "UPDATE contact_settings SET email = ?, github_url = ?, copyright = ?, updated_at = now()"
-                        + " WHERE id = 1",
+        settingsMapper.updateWorkSection(
+                trim(settings.workSection.title),
+                settings.workSection.subtitle == null ? "" : settings.workSection.subtitle.trim());
+        settingsMapper.updateContact(
                 trim(settings.contact.email),
                 trim(settings.contact.githubUrl),
                 trim(settings.contact.copyright));
@@ -184,13 +160,5 @@ public class SiteSettingsServiceImpl implements SiteSettingsService {
 
     private static String trim(String value) {
         return value == null ? "" : value.trim();
-    }
-
-    private JdbcTemplate requireJdbc() {
-        JdbcTemplate jdbc = jdbcTemplate.getIfAvailable();
-        if (jdbc == null) {
-            throw new IllegalStateException("数据库未配置：站点设置不可用");
-        }
-        return jdbc;
     }
 }

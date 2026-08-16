@@ -1,54 +1,41 @@
 package com.myblog.backend.service.impl;
-import com.myblog.backend.service.CategoryTagService;
+
+import com.myblog.backend.mapper.TaxonomyMapper;
 import com.myblog.backend.pojo.CategoryItem;
 import com.myblog.backend.pojo.TagItem;
-
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.jdbc.core.JdbcTemplate;
+import com.myblog.backend.service.CategoryTagService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Category / Tag 服务（#19）。
+ * Category / Tag 服务实现（#19）。
  *
  * <p>领域语义：Category 是文章所属的单一栏目（一篇文章只有一个主分类），
  * Tag 是可复用主题标签（多对多），两者不混淆。删除正在使用的 Category 时
  * 在同一事务中把关联文章迁移到内置 Uncategorized；删除 Tag 时由外键级联
- * 自动解除全部关联（#14 实现决策）。
+ * 自动解除全部关联（#14 实现决策）。数据访问见 {@link TaxonomyMapper}。
  */
 @Service
 public class CategoryTagServiceImpl implements CategoryTagService {
 
-    private final ObjectProvider<JdbcTemplate> jdbcTemplate;
+    private final TaxonomyMapper mapper;
 
-    public CategoryTagServiceImpl(ObjectProvider<JdbcTemplate> jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public CategoryTagServiceImpl(TaxonomyMapper mapper) {
+        this.mapper = mapper;
     }
 
     public boolean isAvailable() {
-        return jdbcTemplate.getIfAvailable() != null;
+        return mapper.isAvailable();
     }
 
     // ---- 管理端 ----
 
     public List<CategoryItem> listCategories() {
-        JdbcTemplate jdbc = requireJdbc();
-        List<CategoryItem> result = new ArrayList<>();
-        jdbc.query(
-                "SELECT id, name, is_uncategorized FROM categories ORDER BY name, id",
-                (org.springframework.jdbc.core.RowCallbackHandler) rs -> {
-                    CategoryItem c = new CategoryItem();
-                    c.id = rs.getLong("id");
-                    c.name = rs.getString("name");
-                    c.uncategorized = rs.getBoolean("is_uncategorized");
-                    result.add(c);
-                });
-        return result;
+        return mapper.listCategories();
     }
 
     @Transactional
@@ -57,26 +44,21 @@ public class CategoryTagServiceImpl implements CategoryTagService {
         CategoryItem item = new CategoryItem();
         item.name = name.trim();
         item.uncategorized = false;
-        Long id = jdbcTemplate.getIfAvailable().queryForObject(
-                "INSERT INTO categories (name) VALUES (?) RETURNING id", Long.class, item.name);
-        item.id = id;
+        item.id = mapper.insertCategory(item.name);
         return item;
     }
 
     @Transactional
     public CategoryItem renameCategory(long id, String name) {
         requireText(name, 64, "分类名称");
-        JdbcTemplate jdbc = requireJdbc();
-        Boolean isUncategorized = jdbc.query(
-                "SELECT is_uncategorized FROM categories WHERE id = ?",
-                rs -> rs.next() ? rs.getBoolean("is_uncategorized") : null, id);
+        Boolean isUncategorized = mapper.isUncategorized(id);
         if (isUncategorized == null) {
             return null;
         }
         if (isUncategorized) {
             throw new IllegalArgumentException("Uncategorized Category 不可改名");
         }
-        jdbc.update("UPDATE categories SET name = ? WHERE id = ?", name.trim(), id);
+        mapper.updateCategoryName(id, name.trim());
         CategoryItem item = new CategoryItem();
         item.id = id;
         item.name = name.trim();
@@ -90,38 +72,21 @@ public class CategoryTagServiceImpl implements CategoryTagService {
      */
     @Transactional
     public boolean deleteCategory(long id) {
-        JdbcTemplate jdbc = requireJdbc();
-        Boolean isUncategorized = jdbc.query(
-                "SELECT is_uncategorized FROM categories WHERE id = ?",
-                rs -> rs.next() ? rs.getBoolean("is_uncategorized") : null, id);
+        Boolean isUncategorized = mapper.isUncategorized(id);
         if (isUncategorized == null) {
             return false;
         }
         if (isUncategorized) {
             throw new IllegalArgumentException("Uncategorized Category 不可删除");
         }
-        Long uncategorizedId = jdbc.queryForObject(
-                "SELECT id FROM categories WHERE is_uncategorized", Long.class);
-        jdbc.update(
-                "UPDATE posts SET category_id = ?, updated_at = now() WHERE category_id = ?",
-                uncategorizedId, id);
-        jdbc.update("DELETE FROM categories WHERE id = ?", id);
+        Long uncategorizedId = mapper.uncategorizedId();
+        mapper.movePostsToCategory(uncategorizedId, id);
+        mapper.deleteCategory(id);
         return true;
     }
 
     public List<TagItem> listTags() {
-        JdbcTemplate jdbc = requireJdbc();
-        List<TagItem> result = new ArrayList<>();
-        jdbc.query(
-                "SELECT id, slug, name FROM tags ORDER BY name, id",
-                (org.springframework.jdbc.core.RowCallbackHandler) rs -> {
-                    TagItem t = new TagItem();
-                    t.id = rs.getLong("id");
-                    t.slug = rs.getString("slug");
-                    t.name = rs.getString("name");
-                    result.add(t);
-                });
-        return result;
+        return mapper.listTags();
     }
 
     @Transactional
@@ -130,25 +95,18 @@ public class CategoryTagServiceImpl implements CategoryTagService {
         TagItem item = new TagItem();
         item.name = name.trim();
         item.slug = uniqueTagSlug(item.name);
-        Long id = jdbcTemplate.getIfAvailable().queryForObject(
-                "INSERT INTO tags (slug, name) VALUES (?, ?) RETURNING id",
-                Long.class, item.slug, item.name);
-        item.id = id;
+        item.id = mapper.insertTag(item.slug, item.name);
         return item;
     }
 
     @Transactional
     public TagItem renameTag(long id, String name) {
         requireText(name, 64, "标签名称");
-        JdbcTemplate jdbc = requireJdbc();
-        Integer exists = jdbc.query(
-                "SELECT 1 FROM tags WHERE id = ?",
-                rs -> rs.next() ? 1 : null, id);
-        if (exists == null) {
+        if (!mapper.tagExists(id)) {
             return null;
         }
         String slug = uniqueTagSlug(name.trim());
-        jdbc.update("UPDATE tags SET name = ?, slug = ? WHERE id = ?", name.trim(), slug, id);
+        mapper.updateTag(name.trim(), slug, id);
         TagItem item = new TagItem();
         item.id = id;
         item.name = name.trim();
@@ -159,51 +117,19 @@ public class CategoryTagServiceImpl implements CategoryTagService {
     /** 删除 Tag：外键 ON DELETE CASCADE 自动解除全部 Blog Post 关联。 */
     @Transactional
     public boolean deleteTag(long id) {
-        JdbcTemplate jdbc = requireJdbc();
-        return jdbc.update("DELETE FROM tags WHERE id = ?", id) > 0;
+        return mapper.deleteTag(id);
     }
 
     // ---- 公开端：只暴露可供 Visitor 过滤 Published Revision 的内容 ----
 
     /** 至少有一篇已发布文章的 Category（Uncategorized 若被使用也会出现）。 */
     public List<CategoryItem> listPublishedCategories() {
-        JdbcTemplate jdbc = requireJdbc();
-        List<CategoryItem> result = new ArrayList<>();
-        jdbc.query(
-                "SELECT DISTINCT c.id, c.name, c.is_uncategorized"
-                        + "  FROM categories c"
-                        + "  JOIN posts p ON p.category_id = c.id"
-                        + " WHERE p.published_revision_id IS NOT NULL"
-                        + " ORDER BY c.name, c.id",
-                (org.springframework.jdbc.core.RowCallbackHandler) rs -> {
-                    CategoryItem c = new CategoryItem();
-                    c.id = rs.getLong("id");
-                    c.name = rs.getString("name");
-                    c.uncategorized = rs.getBoolean("is_uncategorized");
-                    result.add(c);
-                });
-        return result;
+        return mapper.listPublishedCategories();
     }
 
     /** 至少被一篇已发布文章使用的 Tag。 */
     public List<TagItem> listPublishedTags() {
-        JdbcTemplate jdbc = requireJdbc();
-        List<TagItem> result = new ArrayList<>();
-        jdbc.query(
-                "SELECT DISTINCT t.id, t.slug, t.name"
-                        + "  FROM tags t"
-                        + "  JOIN post_tags pt ON pt.tag_id = t.id"
-                        + "  JOIN posts p ON p.id = pt.post_id"
-                        + " WHERE p.published_revision_id IS NOT NULL"
-                        + " ORDER BY t.name, t.id",
-                (org.springframework.jdbc.core.RowCallbackHandler) rs -> {
-                    TagItem t = new TagItem();
-                    t.id = rs.getLong("id");
-                    t.slug = rs.getString("slug");
-                    t.name = rs.getString("name");
-                    result.add(t);
-                });
-        return result;
+        return mapper.listPublishedTags();
     }
 
     // ---- 内部 ----
@@ -216,14 +142,10 @@ public class CategoryTagServiceImpl implements CategoryTagService {
         if (base.isEmpty()) {
             base = "tag";
         }
-        JdbcTemplate jdbc = requireJdbc();
         for (int attempt = 0; attempt < 5; attempt++) {
             String slug = attempt == 0 ? base
                     : base + "-" + Integer.toHexString(ThreadLocalRandom.current().nextInt(0x10000));
-            Integer exists = jdbc.query(
-                    "SELECT 1 FROM tags WHERE slug = ?",
-                    rs -> rs.next() ? 1 : null, slug);
-            if (exists == null) {
+            if (!mapper.tagSlugExists(slug)) {
                 return slug;
             }
         }
@@ -237,13 +159,5 @@ public class CategoryTagServiceImpl implements CategoryTagService {
         if (value.trim().length() > maxLength) {
             throw new IllegalArgumentException(field + " 最多 " + maxLength + " 字符");
         }
-    }
-
-    private JdbcTemplate requireJdbc() {
-        JdbcTemplate jdbc = jdbcTemplate.getIfAvailable();
-        if (jdbc == null) {
-            throw new IllegalStateException("数据库未配置：分类标签服务不可用");
-        }
-        return jdbc;
     }
 }

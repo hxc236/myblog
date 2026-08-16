@@ -2,8 +2,9 @@ package com.myblog.backend.service;
 
 import com.myblog.backend.pojo.PublicPostDetail;
 import com.myblog.backend.pojo.PublicPostSummary;
+import com.myblog.backend.pojo.PublicPage;
+import com.myblog.backend.pojo.ResolvedSlug;
 
-import java.util.List;
 
 /**
  * 公开 Blog Post 读取服务契约（#21）：只读 Published Revision。
@@ -33,19 +34,4 @@ public interface PublicPostService {
     /** 搜索（#23）：只覆盖标题与摘要（post_search_documents 投影），1–50 字符。 */
     PublicPage searchPublished(String q, int page, int pageSize, Long categoryId, Long tagId);
 
-    /** slug 解析结果：命中详情或 301 重定向目标（二选一）。 */
-    class ResolvedSlug {
-
-        public PublicPostDetail detail;
-        public String redirectToSlug;
-    }
-
-    /** 分页结果。 */
-    class PublicPage {
-
-        public List<PublicPostSummary> items;
-        public int page;
-        public int pageSize;
-        public int total;
-    }
 }

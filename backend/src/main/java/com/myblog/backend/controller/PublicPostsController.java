@@ -1,6 +1,7 @@
 package com.myblog.backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.myblog.backend.pojo.ResolvedSlug;
 import com.myblog.backend.service.PublicPostService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.CacheControl;
@@ -72,7 +73,7 @@ public class PublicPostsController {
             return unavailable();
         }
         try {
-            PublicPostService.ResolvedSlug resolved = postService.resolvePublishedSlug(slug);
+            ResolvedSlug resolved = postService.resolvePublishedSlug(slug);
             if (resolved == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .cacheControl(CacheControl.noStore())

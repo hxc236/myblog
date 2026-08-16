@@ -1,5 +1,8 @@
 package com.myblog.backend.service;
 
+import com.myblog.backend.pojo.DailyCount;
+import com.myblog.backend.pojo.TopPost;
+
 import java.util.List;
 
 /**
@@ -34,19 +37,4 @@ public interface PageViewService {
     /** 单篇最近 N 天趋势（30/90）。 */
     List<DailyCount> postTrend(long postId, int days);
 
-    /** 单日聚合。 */
-    class DailyCount {
-
-        public String day;
-        public Long count;
-    }
-
-    /** 热门文章条目（仅内容标识与累计值，无访客信息）。 */
-    class TopPost {
-
-        public Long postId;
-        public String slug;
-        public String title;
-        public Long total;
-    }
 }

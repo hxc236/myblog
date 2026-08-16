@@ -1,7 +1,7 @@
 package com.myblog.backend.service.impl;
 import com.myblog.backend.service.PostService;
-import com.myblog.backend.service.PostService.DraftPayload;
-import com.myblog.backend.service.PostService.RevisionItem;
+import com.myblog.backend.pojo.DraftPayload;
+import com.myblog.backend.pojo.RevisionItem;
 import com.myblog.backend.pojo.AdminPostDetail;
 import com.myblog.backend.pojo.AdminPostSummary;
 

@@ -1,6 +1,7 @@
 package com.myblog.backend.controller;
 
 import com.myblog.backend.pojo.AdminPostDetail;
+import com.myblog.backend.pojo.DraftPayload;
 import com.myblog.backend.service.PostService;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
@@ -70,7 +71,7 @@ public class AdminPostController {
     /** 保存 Draft（不改变公开内容）。 */
     @PutMapping("/{id}")
     public ResponseEntity<?> saveDraft(@PathVariable long id,
-                                       @RequestBody(required = false) PostService.DraftPayload payload) {
+                                       @RequestBody(required = false) DraftPayload payload) {
         if (!postService.isAvailable()) {
             return unavailable();
         }
