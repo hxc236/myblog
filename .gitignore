@@ -1,2 +1,5 @@
 # agent worktrees（AGENTS.md 卡片工作流）
 .claude/
+
+# 部署敏感配置（docs/deploy.md：绝不允许提交）
+.env

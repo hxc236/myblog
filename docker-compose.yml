@@ -1,0 +1,70 @@
+# 腾讯云 Lighthouse 部署编排（#13）：PostgreSQL + 后端 API + Nginx 前端/反代。
+# 完整操作手册见 docs/deploy.md。所有敏感值来自根目录 .env（模板 deploy/.env.example）。
+# 三个服务仅在 compose 内部网络互联；公网只暴露 Nginx 的 80/443。
+
+services:
+  # ---- PostgreSQL：唯一运行时内容权威源（ADR-0001），Flyway 自动建表 ----
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-myblog}
+      POSTGRES_USER: ${POSTGRES_USER:-myblog}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?请在 .env 设置 POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-myblog} -d ${POSTGRES_DB:-myblog}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  # ---- 后端 API（Java 11 多阶段镜像，构建于 backend/Dockerfile）----
+  api:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: "8080"
+      # 容器网络内通过 compose 服务名 db 访问 PostgreSQL
+      DATABASE_URL: postgres://${POSTGRES_USER:-myblog}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-myblog}
+      SITE_ORIGIN: ${SITE_ORIGIN:?请在 .env 设置 SITE_ORIGIN}
+      # Admin Console（GitHub OAuth）：不配置则登录入口与 MVP 内容导入不可用，其余功能不受影响
+      GITHUB_OAUTH_CLIENT_ID: ${GITHUB_OAUTH_CLIENT_ID:-}
+      GITHUB_OAUTH_CLIENT_SECRET: ${GITHUB_OAUTH_CLIENT_SECRET:-}
+      GITHUB_ADMIN_ALLOWLIST: ${GITHUB_ADMIN_ALLOWLIST:-}
+      JAVA_OPTS: ${JAVA_OPTS:--Xmx512m}
+    # 不对外暴露端口：公网只能经 Nginx 反代访问
+
+  # ---- Nginx：前端静态文件 + SPA 回退 + /api/ 与 OAuth 反代（同源部署）----
+  web:
+    build:
+      context: ./myblogweb
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # 证书签发前挂 HTTP 阶段配置；签发后改 .env 的 NGINX_CONF 并重启 web（见 docs/deploy.md §4.7）
+      - ${NGINX_CONF:-./deploy/nginx.http.conf}:/etc/nginx/conf.d/default.conf:ro
+      - certbot-webroot:/var/www/certbot:ro
+      - certbot-certs:/etc/letsencrypt:ro
+
+  # ---- Let's Encrypt 证书工具：不随 compose up 启动，按手册手动执行 ----
+  # 首次签发：docker compose --profile certbot run --rm certbot certonly --webroot -w /var/www/certbot -d hxc236.cn -d www.hxc236.cn
+  certbot:
+    image: certbot/certbot
+    profiles: ["certbot"]
+    volumes:
+      - certbot-webroot:/var/www/certbot
+      - certbot-certs:/etc/letsencrypt
+
+volumes:
+  pgdata:          # PostgreSQL 数据（删容器不丢数据）
+  certbot-webroot: # ACME 校验文件
+  certbot-certs:   # 已签发证书（nginx 只读挂载）

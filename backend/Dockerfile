@@ -1,13 +1,17 @@
-# 隔离公开站点 API 的 Render-ready 多阶段 Docker 构建（Java 11）
-# 生产运行进程无需 MySQL / 嵌入式数据库，通过 /api/v1/health 健康检查。
+# 个人站生产后端的多阶段 Docker 构建（#13 腾讯云 Lighthouse 部署）
+# 运行进程：PostgreSQL 数据源（DATABASE_URL）+ 公开内容 API + Admin（GitHub OAuth）。
 
-# ---- 构建阶段：Java 11 + Maven，运行全部测试与打包 ----
+# ---- 构建阶段：Java 11 + Maven，打包 ----
 FROM maven:3.8.6-eclipse-temurin-11 AS build
 WORKDIR /build
+# 国内构建加速：阿里云 Maven 镜像（部署手册 §3/§4.5），不影响本地 mvn
+COPY settings.xml /usr/share/maven/conf/settings.xml
 COPY pom.xml .
 RUN mvn -q dependency:go-offline
 COPY src ./src
-RUN mvn -q package
+# 测试不在此阶段运行：数据库集成测试依赖 Testcontainers（需要 Docker 守护进程），
+# 容器构建环境没有；测试由宿主发布检查执行（docs/deploy.md 本地发布检查）。
+RUN mvn -q package -DskipTests
 
 # ---- 运行阶段：Java 11 JRE ----
 FROM eclipse-temurin:11-jre
