@@ -195,7 +195,7 @@ NGINX_CONF=./deploy/nginx.http.conf            # 证书签发前：HTTP 阶段�
 ```bash
 cd /opt/myblog
 docker compose up -d --build
-docker compose ps          # 三个容器都应为 Up；db 显示 healthy
+ docker compose ps          # 三个容器都应为 Up；db 显示 healthy
 ```
 
 首次构建约 5–15 分钟（下载 Maven/Node 依赖并编译）。查看启动日志：
@@ -203,6 +203,15 @@ docker compose ps          # 三个容器都应为 Up；db 显示 healthy
 ```bash
 docker compose logs -f api    # 看到 "Started BackendApplication" 即启动成功
 ```
+
+> 国内加速说明（仓库已内置，无需手动配置）：
+> - **Maven 依赖**：`backend/settings.xml` 已配阿里云镜像（Docker 构建时自动生效）；
+> - **npm 依赖**：`myblogweb/.npmrc` 已指向 npmmirror 国内镜像；
+> - **Docker Hub 镜像**：Lighthouse 的 Docker CE 模板通常自带腾讯云内网加速
+>   （`mirror.ccs.tencentyun.com`）。若拉取慢/失败，可在
+>   `/etc/docker/daemon.json` 的 `registry-mirrors` 添加可用加速器后
+>   `systemctl restart docker`（本机 Windows 版 Docker Desktop 的加速器
+>   配置方法相同：Settings → Docker Engine → registry-mirrors）。
 
 > **先停掉再解释**：`up -d --build` = 构建镜像（--build）并以守护模式启动（-d）。
 > 三个容器：`db`（PostgreSQL）→ `api`（后端，等 db 健康后才启动）→ `web`（Nginx）。

@@ -4,6 +4,8 @@
 # ---- 构建阶段：Java 11 + Maven，打包 ----
 FROM maven:3.8.6-eclipse-temurin-11 AS build
 WORKDIR /build
+# 国内构建加速：阿里云 Maven 镜像（部署手册 §3/§4.5），不影响本地 mvn
+COPY settings.xml /usr/share/maven/conf/settings.xml
 COPY pom.xml .
 RUN mvn -q dependency:go-offline
 COPY src ./src
