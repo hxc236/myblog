@@ -5,7 +5,7 @@
 - 首页四个内容区：公开介绍、作品展示、博客、联系方式（设计规范见 `docs/Design.md`）
 - PostgreSQL 是唯一运行时内容权威源（ADR-0001）；空库由 Flyway 建表，MVP 内容可经一次性导入写入（#27/#30）
 - 已废弃的 JWT / MySQL / MyBatis-Plus 账户、Plan、Todo 应用已删除（#31），构建不再包含 legacy 分类制品
-- 部署说明与发布检查：`docs/deploy.md`；Render 蓝图：`render.yaml`
+- 部署说明与发布检查：`docs/deploy.md`（腾讯云 Lighthouse，Docker + Nginx 同源部署）
 
 ## 目录结构
 
@@ -50,4 +50,4 @@ cd myblogweb && npm run lint && npm run build
 docker build -t myblog-api backend/        # Java 11 多阶段构建
 ```
 
-上线前的完整发布检查清单与 Render 部署步骤见 **`docs/deploy.md`**。
+上线前的完整发布检查清单与腾讯云部署步骤见 **`docs/deploy.md`**。
